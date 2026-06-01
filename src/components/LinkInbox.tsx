@@ -290,12 +290,12 @@ export default function LinkInbox() {
               <ul className="mt-4 space-y-3">
                 {capturedLinks.map((capturedLink) => (
                   <li
-                    className="border border-ink/10 bg-paper/70 px-4 py-3"
+                    className="overflow-hidden border border-ink/10 bg-paper/70 px-4 py-3"
                     key={capturedLink.id}
                   >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
                       <a
-                        className="min-w-0 break-words text-sm font-semibold leading-6 text-ink transition hover:text-sage"
+                        className="min-w-0 overflow-wrap-anywhere text-sm font-semibold leading-6 text-ink transition hover:text-sage"
                         href={capturedLink.url}
                         rel="noreferrer"
                         target="_blank"
@@ -313,13 +313,13 @@ export default function LinkInbox() {
                         <span className="text-ink/45">
                           {formatCapturedTime()}
                         </span>
-                        {capturedLink.error ? (
-                          <span className="basis-full normal-case tracking-normal text-clay">
-                            {capturedLink.error}
-                          </span>
-                        ) : null}
                       </div>
                     </div>
+                    {capturedLink.error ? (
+                      <p className="mt-3 overflow-wrap-anywhere text-sm font-semibold leading-6 text-clay">
+                        {capturedLink.error}
+                      </p>
+                    ) : null}
                   </li>
                 ))}
               </ul>

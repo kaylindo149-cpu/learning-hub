@@ -45,3 +45,7 @@ select {
   font-weight: 900;
   letter-spacing: 0;
 }
+
+.overflow-wrap-anywhere {
+  overflow-wrap: anywhere;
+}
