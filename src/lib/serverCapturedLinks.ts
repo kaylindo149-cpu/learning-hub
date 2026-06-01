@@ -5,6 +5,13 @@ import type { CapturedLink } from "@/lib/capturedLinks";
 const dataDirectory =
   process.env.LEARNING_HUB_DATA_DIR ?? path.join(process.cwd(), ".data");
 const capturedLinksPath = path.join(dataDirectory, "slack-captured-links.json");
+const redisRestUrl =
+  process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+const redisRestToken =
+  process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
+const redisCapturedLinksKey =
+  process.env.LEARNING_HUB_SLACK_LINKS_KEY ??
+  "learning-hub:slack-captured-links";
 
 type StoredCapturedLink = Omit<CapturedLink, "status"> & {
   status?: unknown;
@@ -48,7 +55,58 @@ async function writeCapturedLinks(capturedLinks: CapturedLink[]) {
   await writeFile(capturedLinksPath, JSON.stringify(capturedLinks, null, 2));
 }
 
+function hasRedisStorage() {
+  return Boolean(redisRestUrl && redisRestToken);
+}
+
+async function runRedisCommand<T>(command: Array<string | number>) {
+  if (!redisRestUrl || !redisRestToken) {
+    throw new Error("Redis storage is not configured.");
+  }
+
+  const response = await fetch(redisRestUrl, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${redisRestToken}`,
+      "content-type": "application/json"
+    },
+    body: JSON.stringify(command),
+    cache: "no-store"
+  });
+  const data = (await response.json().catch(() => ({}))) as {
+    result?: T;
+    error?: string;
+  };
+
+  if (!response.ok || data.error) {
+    throw new Error(data.error ?? "Redis command failed.");
+  }
+
+  return data.result;
+}
+
+async function readRedisCapturedLinks() {
+  const storedValue = await runRedisCommand<string | null>([
+    "GET",
+    redisCapturedLinksKey
+  ]);
+
+  if (!storedValue) {
+    return [];
+  }
+
+  return normalizeCapturedLinks(JSON.parse(storedValue));
+}
+
+async function writeRedisCapturedLinks(capturedLinks: CapturedLink[]) {
+  await runRedisCommand(["SET", redisCapturedLinksKey, JSON.stringify(capturedLinks)]);
+}
+
 export async function readServerCapturedLinks(): Promise<CapturedLink[]> {
+  if (hasRedisStorage()) {
+    return readRedisCapturedLinks();
+  }
+
   try {
     const file = await readFile(capturedLinksPath, "utf8");
 
@@ -78,7 +136,11 @@ export async function appendServerCapturedLinks(capturedLinks: CapturedLink[]) {
     ...existingLinks
   ];
 
-  await writeCapturedLinks(nextLinks);
+  if (hasRedisStorage()) {
+    await writeRedisCapturedLinks(nextLinks);
+  } else {
+    await writeCapturedLinks(nextLinks);
+  }
 
   return nextLinks;
 }
@@ -93,7 +155,11 @@ export async function removeServerCapturedLinks(ids: string[]) {
     (link) => !idsToRemove.has(link.id)
   );
 
-  await writeCapturedLinks(nextLinks);
+  if (hasRedisStorage()) {
+    await writeRedisCapturedLinks(nextLinks);
+  } else {
+    await writeCapturedLinks(nextLinks);
+  }
 
   return nextLinks;
 }
