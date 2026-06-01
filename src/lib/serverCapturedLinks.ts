@@ -1,9 +1,13 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import type { CapturedLink } from "@/lib/capturedLinks";
 
 const dataDirectory =
-  process.env.LEARNING_HUB_DATA_DIR ?? path.join(process.cwd(), ".data");
+  process.env.LEARNING_HUB_DATA_DIR ??
+  (process.env.VERCEL
+    ? path.join(tmpdir(), "learning-hub")
+    : path.join(process.cwd(), ".data"));
 const capturedLinksPath = path.join(dataDirectory, "slack-captured-links.json");
 const redisRestUrl =
   process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
