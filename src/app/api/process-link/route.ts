@@ -178,6 +178,32 @@ function validateProcessedLink(value: unknown, source: string): ProcessedLink {
   };
 }
 
+function createFallbackProcessedLink(
+  context: Awaited<ReturnType<typeof fetchArticleContext>>,
+  selectedCategory: string
+): ProcessedLink {
+  return {
+    title: context.title || context.source || "Saved article",
+    summary:
+      context.description ||
+      (context.text
+        ? `${context.text.slice(0, 180).trim()}${context.text.length > 180 ? "..." : ""}`
+        : "A saved link ready to revisit."),
+    category: selectedCategory,
+    tags: ["learn later", context.source].filter(Boolean).slice(0, 4),
+    source: context.source
+  };
+}
+
+function parseGeminiJsonOutput(outputText: string) {
+  const cleanedOutput = outputText
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "");
+
+  return JSON.parse(cleanedOutput);
+}
+
 async function analyzeLinkWithGemini(
   context: Awaited<ReturnType<typeof fetchArticleContext>>,
   selectedCategory: string
@@ -265,7 +291,10 @@ Return:
   }
 
   return {
-    ...validateProcessedLink(JSON.parse(outputText), context.source),
+    ...validateProcessedLink(
+      parseGeminiJsonOutput(outputText),
+      context.source
+    ),
     imageUrl: context.imageUrl
   };
 }
@@ -292,7 +321,20 @@ export async function POST(request: Request) {
     }
 
     const context = await fetchArticleContext(url);
-    const card = await analyzeLinkWithGemini(context, category);
+    const card = await analyzeLinkWithGemini(context, category).catch((error) => {
+      if (
+        error instanceof SyntaxError ||
+        (error instanceof Error &&
+          error.message.toLowerCase().includes("json"))
+      ) {
+        return {
+          ...createFallbackProcessedLink(context, category),
+          imageUrl: context.imageUrl
+        };
+      }
+
+      throw error;
+    });
 
     return NextResponse.json({ card: { ...card, category } });
   } catch (error) {
