@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  background: #fffdf0;
+  color: #2a1f29;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  text-rendering: geometricPrecision;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(184, 244, 111, 0.22), transparent 24rem),
+    linear-gradient(180deg, #fffdf0 0%, #f7ffdf 55%, #fffdf0 100%);
+}
+
+::selection {
+  background: #b8f46f;
+  color: #2a1f29;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.display-bubble {
+  font-family: "Arial Rounded MT Bold", "Avenir Next Rounded", "Arial Black", Inter, sans-serif;
+  font-weight: 900;
+  letter-spacing: 0;
+}
