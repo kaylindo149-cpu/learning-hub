@@ -57,6 +57,41 @@ function normalizeCategoryName(category: string) {
   return category.trim().replace(/\s+/g, " ");
 }
 
+function normalizeTagValue(tag: string) {
+  return normalizeCategoryName(tag).toLowerCase();
+}
+
+function isUtilityTag(tag: string, card: LearningCard) {
+  const normalizedTag = normalizeTagValue(tag);
+
+  return (
+    normalizedTag === "pending" ||
+    normalizedTag === "processing" ||
+    normalizedTag === "failed" ||
+    normalizedTag === normalizeTagValue(card.source) ||
+    normalizedTag.startsWith("http://") ||
+    normalizedTag.startsWith("https://")
+  );
+}
+
+function getCardTags(card: LearningCard) {
+  const tagMap = new Map<string, string>();
+
+  [card.category, ...card.tags].forEach((tag) => {
+    const normalizedTag = normalizeTagValue(tag);
+
+    if (!normalizedTag || isUtilityTag(tag, card)) {
+      return;
+    }
+
+    if (!tagMap.has(normalizedTag)) {
+      tagMap.set(normalizedTag, normalizeCategoryName(tag));
+    }
+  });
+
+  return Array.from(tagMap.values());
+}
+
 function createTemporaryCard(capturedLink: CapturedLink): LearningCard {
   const source = getCapturedLinkDomain(capturedLink.url);
 
@@ -90,6 +125,7 @@ export function LearningArchive() {
   const [editingCategory, setEditingCategory] = useState("");
   const [editingCategoryName, setEditingCategoryName] = useState("");
   const [categoryMessage, setCategoryMessage] = useState("");
+  const [isManagingCategories, setIsManagingCategories] = useState(false);
   const [hiddenStarterCardIds, setHiddenStarterCardIds] = useState<string[]>(
     []
   );
@@ -224,16 +260,31 @@ export function LearningArchive() {
     [capturedLinks, savedCards, visibleStarterCards]
   );
 
-  const learningCategories = useMemo(() => ["All", ...categoryOptions], [
-    categoryOptions
-  ]);
+  const learningCategories = useMemo(() => {
+    const tagMap = new Map<string, string>();
+
+    [...categoryOptions, ...allCards.flatMap(getCardTags)].forEach((tag) => {
+      const normalizedTag = normalizeTagValue(tag);
+
+      if (!normalizedTag || tagMap.has(normalizedTag)) {
+        return;
+      }
+
+      tagMap.set(normalizedTag, tag);
+    });
+
+    return ["All", ...Array.from(tagMap.values())];
+  }, [allCards, categoryOptions]);
 
   const filteredCards = useMemo(() => {
     const search = searchTerm.trim().toLowerCase();
 
     return allCards.filter((card) => {
       const matchesCategory =
-        activeCategory === "All" || card.category === activeCategory;
+        activeCategory === "All" ||
+        getCardTags(card).some(
+          (tag) => normalizeTagValue(tag) === normalizeTagValue(activeCategory)
+        );
       const searchableText = [
         card.category,
         card.title,
@@ -275,21 +326,20 @@ export function LearningArchive() {
 
     if (renamedCategory) {
       saveSavedLearningCards(
-        readSavedLearningCards().map((card) =>
-          card.category === renamedCategory.from
-            ? {
-                ...card,
-                category: renamedCategory.to,
-                tags: card.tags.map((tag) =>
-                  tag === renamedCategory.from ? renamedCategory.to : tag
-                ),
-                thumbnailLabel:
-                  card.thumbnailLabel === renamedCategory.from
-                    ? renamedCategory.to
-                    : card.thumbnailLabel
-              }
-            : card
-        )
+        readSavedLearningCards().map((card) => ({
+          ...card,
+          category:
+            card.category === renamedCategory.from
+              ? renamedCategory.to
+              : card.category,
+          tags: card.tags.map((tag) =>
+            tag === renamedCategory.from ? renamedCategory.to : tag
+          ),
+          thumbnailLabel:
+            card.thumbnailLabel === renamedCategory.from
+              ? renamedCategory.to
+              : card.thumbnailLabel
+        }))
       );
       saveCapturedLinks(
         readCapturedLinks().map((capturedLink) =>
@@ -303,23 +353,20 @@ export function LearningArchive() {
 
     if (deletedCategory) {
       saveSavedLearningCards(
-        readSavedLearningCards().map((card) =>
-          card.category === deletedCategory.category
-            ? {
-                ...card,
-                category: deletedCategory.fallback,
-                tags: card.tags.map((tag) =>
-                  tag === deletedCategory.category
-                    ? deletedCategory.fallback
-                    : tag
-                ),
-                thumbnailLabel:
-                  card.thumbnailLabel === deletedCategory.category
-                    ? deletedCategory.fallback
-                    : card.thumbnailLabel
-              }
-            : card
-        )
+        readSavedLearningCards().map((card) => ({
+          ...card,
+          category:
+            card.category === deletedCategory.category
+              ? deletedCategory.fallback
+              : card.category,
+          tags: card.tags.map((tag) =>
+            tag === deletedCategory.category ? deletedCategory.fallback : tag
+          ),
+          thumbnailLabel:
+            card.thumbnailLabel === deletedCategory.category
+              ? deletedCategory.fallback
+              : card.thumbnailLabel
+        }))
       );
       saveCapturedLinks(
         readCapturedLinks().map((capturedLink) =>
@@ -422,6 +469,11 @@ export function LearningArchive() {
     }
   }
 
+  function openCategoryManager() {
+    setIsManagingCategories(true);
+    setCategoryMessage("");
+  }
+
   function deleteSelectedCards() {
     if (selectedCardIds.length === 0) {
       return;
@@ -521,18 +573,31 @@ export function LearningArchive() {
           <div className="flex gap-2 overflow-x-auto pb-1 lg:ml-auto lg:pb-0">
             {learningCategories.map((category) => (
               <button
-                className={`whitespace-nowrap border px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] transition ${
+                className={`inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-full border px-3 text-[0.68rem] font-bold lowercase tracking-normal transition ${
                   activeCategory === category
-                    ? "border-ink bg-ink text-paper"
-                    : "border-ink/15 bg-white/55 text-ink/70 hover:border-sage hover:text-sage"
+                    ? "border-ink bg-ink text-paper shadow-soft"
+                    : "border-ink/25 bg-white/55 text-ink/70 hover:border-sage hover:text-sage"
                 }`}
                 key={category}
                 onClick={() => setActiveCategory(category)}
                 type="button"
               >
+                {category !== "All" ? (
+                  <span
+                    aria-hidden="true"
+                    className="h-1.5 w-1.5 rounded-full bg-sage"
+                  />
+                ) : null}
                 {category}
               </button>
             ))}
+            <button
+              className="inline-flex h-9 items-center whitespace-nowrap rounded-full border border-ink/15 bg-paper/80 px-3 text-[0.68rem] font-bold lowercase tracking-normal text-sage transition hover:border-sage hover:bg-white"
+              onClick={openCategoryManager}
+              type="button"
+            >
+              manage tags
+            </button>
           </div>
         </div>
       </section>
@@ -589,111 +654,6 @@ export function LearningArchive() {
             )}
           </div>
 
-          <div className="border border-ink/10 bg-white/45 p-4 sm:min-w-[22rem]">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="font-serif text-2xl text-ink">Categories</h2>
-              <span className="text-xs font-bold uppercase tracking-[0.18em] text-sage">
-                Manage
-              </span>
-            </div>
-            <div className="mt-4 flex gap-2">
-              <label className="min-w-0 flex-1">
-                <span className="sr-only">New category</span>
-                <input
-                  className="h-11 w-full border border-ink/15 bg-paper/80 px-3 text-sm font-semibold outline-none transition placeholder:text-ink/35 focus:border-sage"
-                  onChange={(event) => setNewCategoryName(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      handleAddCategory();
-                    }
-                  }}
-                  placeholder="New category"
-                  type="text"
-                  value={newCategoryName}
-                />
-              </label>
-              <button
-                className="h-11 border border-ink bg-ink px-4 text-xs font-bold uppercase tracking-[0.14em] text-paper transition hover:border-sage hover:bg-sage"
-                onClick={handleAddCategory}
-                type="button"
-              >
-                Add
-              </button>
-            </div>
-            {categoryMessage ? (
-              <p className="mt-3 text-sm font-semibold text-ink/55">
-                {categoryMessage}
-              </p>
-            ) : null}
-            <ul className="mt-4 space-y-2">
-              {categoryOptions.map((category) => (
-                <li
-                  className="flex min-w-0 flex-col gap-2 border border-ink/10 bg-paper/65 p-2 sm:flex-row sm:items-center"
-                  key={category}
-                >
-                  {editingCategory === category ? (
-                    <>
-                      <input
-                        className="h-10 min-w-0 flex-1 border border-ink/15 bg-white/70 px-3 text-sm font-semibold outline-none transition focus:border-sage"
-                        onChange={(event) =>
-                          setEditingCategoryName(event.target.value)
-                        }
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            handleRenameCategory();
-                          }
-
-                          if (event.key === "Escape") {
-                            cancelRenamingCategory();
-                          }
-                        }}
-                        type="text"
-                        value={editingCategoryName}
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          className="h-10 border border-sage bg-sage px-3 text-xs font-bold uppercase tracking-[0.12em] text-paper"
-                          onClick={handleRenameCategory}
-                          type="button"
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="h-10 border border-ink/15 bg-white/55 px-3 text-xs font-bold uppercase tracking-[0.12em] text-ink/60"
-                          onClick={cancelRenamingCategory}
-                          type="button"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <span className="min-w-0 flex-1 truncate px-1 text-sm font-bold text-ink">
-                        {category}
-                      </span>
-                      <div className="flex gap-2">
-                        <button
-                          className="h-10 border border-ink/15 bg-white/55 px-3 text-xs font-bold uppercase tracking-[0.12em] text-ink/60 transition hover:border-sage hover:text-sage"
-                          onClick={() => startRenamingCategory(category)}
-                          type="button"
-                        >
-                          Rename
-                        </button>
-                        <button
-                          className="h-10 border border-clay/30 bg-white/55 px-3 text-xs font-bold uppercase tracking-[0.12em] text-clay transition hover:border-clay hover:bg-clay hover:text-paper"
-                          onClick={() => handleDeleteCategory(category)}
-                          type="button"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
 
         {isConfirmingDelete ? (
@@ -735,6 +695,7 @@ export function LearningArchive() {
               : null;
             const isDeletable = isDeletableCard(card);
             const isSelected = selectedCardIds.includes(card.id);
+            const cardTags = getCardTags(card);
 
             return (
               <article className="group" key={card.id}>
@@ -792,9 +753,20 @@ export function LearningArchive() {
                   </div>
 
                   <div className="mt-5">
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-sage">
-                      {card.category}
-                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {cardTags.map((tag) => (
+                        <span
+                          className="inline-flex h-7 items-center gap-1.5 rounded-full border border-ink/20 bg-white/60 px-2.5 text-[0.68rem] font-bold lowercase text-ink/68"
+                          key={tag}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className="h-1.5 w-1.5 rounded-full bg-sage"
+                          />
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                     <h2 className="mt-3 font-serif text-3xl leading-tight text-ink transition group-hover:text-sage">
                       {card.title}
                     </h2>
@@ -824,6 +796,142 @@ export function LearningArchive() {
           </div>
         ) : null}
       </section>
+
+      {isManagingCategories ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-end justify-center px-4 py-5 sm:items-center"
+          role="dialog"
+        >
+          <button
+            aria-label="Close tag manager"
+            className="absolute inset-0 bg-ink/30 backdrop-blur-sm"
+            onClick={() => setIsManagingCategories(false)}
+            type="button"
+          />
+          <section className="relative max-h-[min(42rem,calc(100vh-2.5rem))] w-full max-w-2xl overflow-y-auto border border-ink/10 bg-paper p-5 shadow-soft sm:p-6">
+            <div className="flex items-start justify-between gap-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.24em] text-sage">
+                  Manage
+                </p>
+                <h2 className="mt-2 font-serif text-3xl text-ink">Tags</h2>
+              </div>
+              <button
+                className="h-10 border border-ink/15 bg-white/55 px-4 text-xs font-bold uppercase tracking-[0.14em] text-ink/65 transition hover:border-sage hover:text-sage"
+                onClick={() => setIsManagingCategories(false)}
+                type="button"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-5 flex gap-2">
+              <label className="min-w-0 flex-1">
+                <span className="sr-only">New tag</span>
+                <input
+                  className="h-11 w-full border border-ink/15 bg-white/70 px-3 text-sm font-semibold outline-none transition placeholder:text-ink/35 focus:border-sage"
+                  onChange={(event) => setNewCategoryName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      handleAddCategory();
+                    }
+                  }}
+                  placeholder="New tag"
+                  type="text"
+                  value={newCategoryName}
+                />
+              </label>
+              <button
+                className="h-11 border border-ink bg-ink px-4 text-xs font-bold uppercase tracking-[0.14em] text-paper transition hover:border-sage hover:bg-sage"
+                onClick={handleAddCategory}
+                type="button"
+              >
+                Add
+              </button>
+            </div>
+
+            {categoryMessage ? (
+              <p className="mt-3 text-sm font-semibold text-ink/55">
+                {categoryMessage}
+              </p>
+            ) : null}
+
+            <ul className="mt-5 space-y-2">
+              {categoryOptions.map((category) => (
+                <li
+                  className="flex min-w-0 flex-col gap-2 border border-ink/10 bg-white/45 p-2 sm:flex-row sm:items-center"
+                  key={category}
+                >
+                  {editingCategory === category ? (
+                    <>
+                      <input
+                        className="h-10 min-w-0 flex-1 border border-ink/15 bg-paper/80 px-3 text-sm font-semibold outline-none transition focus:border-sage"
+                        onChange={(event) =>
+                          setEditingCategoryName(event.target.value)
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            handleRenameCategory();
+                          }
+
+                          if (event.key === "Escape") {
+                            cancelRenamingCategory();
+                          }
+                        }}
+                        type="text"
+                        value={editingCategoryName}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          className="h-10 border border-sage bg-sage px-3 text-xs font-bold uppercase tracking-[0.12em] text-paper"
+                          onClick={handleRenameCategory}
+                          type="button"
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="h-10 border border-ink/15 bg-white/55 px-3 text-xs font-bold uppercase tracking-[0.12em] text-ink/60"
+                          onClick={cancelRenamingCategory}
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="inline-flex min-w-0 flex-1 items-center gap-2 truncate px-1 text-sm font-bold text-ink">
+                        <span
+                          aria-hidden="true"
+                          className="h-1.5 w-1.5 rounded-full bg-sage"
+                        />
+                        {category}
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          className="h-10 border border-ink/15 bg-white/55 px-3 text-xs font-bold uppercase tracking-[0.12em] text-ink/60 transition hover:border-sage hover:text-sage"
+                          onClick={() => startRenamingCategory(category)}
+                          type="button"
+                        >
+                          Rename
+                        </button>
+                        <button
+                          className="h-10 border border-clay/30 bg-white/55 px-3 text-xs font-bold uppercase tracking-[0.12em] text-clay transition hover:border-clay hover:bg-clay hover:text-paper"
+                          onClick={() => handleDeleteCategory(category)}
+                          type="button"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }
