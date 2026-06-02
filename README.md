@@ -42,6 +42,16 @@ SLACK_LEARNING_HUB_CATEGORY=Learn Later
 
 When a Slack message in that channel contains one or more `http` or `https` links, the app stores them in a small local server queue. The Learning Hub page checks that queue every few seconds, imports the links into Captured Links, and then the existing AI flow turns them into saved cards.
 
+To choose a manual tag/category from Slack, include it in the message:
+
+```text
+[AI] https://example.com/article
+tag: Digital Culture https://example.com/article
+category: Learning Science https://example.com/article
+```
+
+If you do not include a tag/category, the app uses `SLACK_LEARNING_HUB_CATEGORY`, or `Learn Later` when that variable is not set. The Slack tag should match a tag you created in **manage tags** so it appears in the app filters.
+
 On Vercel, use Upstash Redis or Vercel KV for the Slack queue:
 
 ```bash

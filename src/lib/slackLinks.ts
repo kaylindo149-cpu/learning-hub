@@ -1,5 +1,8 @@
 const slackWrappedUrlPattern = /<(https?:\/\/[^>|]+)(?:\|[^>]*)?>/gi;
 const plainUrlPattern = /https?:\/\/[^\s<>"']+/gi;
+const bracketCategoryPattern = /\[([^\][\n]{1,48})\]/;
+const namedCategoryPattern =
+  /(?:^|\s)(?:tag|category|cat)\s*:\s*([^\n<]+?)(?=\s*(?:<https?:|https?:|$))/i;
 
 function cleanUrl(url: string) {
   return url.replace(/[),.;!?]+$/g, "");
@@ -41,4 +44,25 @@ export function extractUrlsFromSlackText(text: string) {
   }
 
   return urls;
+}
+
+function removeUrlsFromSlackText(text: string) {
+  return text
+    .replace(slackWrappedUrlPattern, " ")
+    .replace(plainUrlPattern, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeCategoryName(category: string) {
+  return category.trim().replace(/\s+/g, " ");
+}
+
+export function extractCategoryFromSlackText(text: string) {
+  const textWithoutUrls = removeUrlsFromSlackText(text);
+  const namedCategory = textWithoutUrls.match(namedCategoryPattern)?.[1];
+  const bracketCategory = textWithoutUrls.match(bracketCategoryPattern)?.[1];
+  const category = normalizeCategoryName(namedCategory ?? bracketCategory ?? "");
+
+  return category || undefined;
 }

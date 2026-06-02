@@ -2,7 +2,10 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { defaultLearningCategory } from "@/lib/learningCategories";
 import { appendServerCapturedLinks } from "@/lib/serverCapturedLinks";
-import { extractUrlsFromSlackText } from "@/lib/slackLinks";
+import {
+  extractCategoryFromSlackText,
+  extractUrlsFromSlackText
+} from "@/lib/slackLinks";
 import type { CapturedLink } from "@/lib/capturedLinks";
 
 export const runtime = "nodejs";
@@ -80,13 +83,19 @@ function getSlackCategory() {
   return category || defaultLearningCategory;
 }
 
+function getSlackEventCategory(text?: string) {
+  const selectedCategory = text ? extractCategoryFromSlackText(text) : undefined;
+
+  return selectedCategory || getSlackCategory();
+}
+
 function createCapturedLinksFromSlackEvent(
   payload: SlackEventPayload,
   urls: string[]
 ): CapturedLink[] {
   const event = payload.event;
   const capturedAt = getCaptureDate(event?.ts ?? event?.event_ts);
-  const category = getSlackCategory();
+  const category = getSlackEventCategory(event?.text);
   const eventId = payload.event_id ?? event?.ts ?? `${Date.now()}`;
 
   return urls.map((url, index) => ({
