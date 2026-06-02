@@ -61,6 +61,63 @@ function normalizeTagValue(tag: string) {
   return normalizeCategoryName(tag).toLowerCase();
 }
 
+const tagMarkColors = [
+  "#ff6f91",
+  "#ffb84d",
+  "#59c7f2",
+  "#7ed957",
+  "#b86bff",
+  "#ff7a59",
+  "#48d1b5"
+];
+
+const tagMarkShapes = ["star", "flower", "heart"] as const;
+
+function getTagMarkSeed(tag: string) {
+  return normalizeTagValue(tag)
+    .split("")
+    .reduce((total, char) => total + char.charCodeAt(0), 0);
+}
+
+function TagMark({ muted = false, tag }: { muted?: boolean; tag: string }) {
+  const seed = getTagMarkSeed(tag);
+  const shape = tagMarkShapes[seed % tagMarkShapes.length];
+  const color = muted
+    ? "rgba(45, 40, 35, 0.24)"
+    : tagMarkColors[seed % tagMarkColors.length];
+
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center"
+      style={{ color }}
+    >
+      <svg
+        className="h-full w-full"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        {shape === "star" ? (
+          <path d="M10 1.7 12.4 7l5.8.7-4.3 3.9 1.2 5.7-5.1-2.9-5.1 2.9 1.2-5.7-4.3-3.9L7.6 7 10 1.7Z" />
+        ) : null}
+        {shape === "flower" ? (
+          <>
+            <circle cx="10" cy="10" r="2.7" />
+            <circle cx="10" cy="4.6" r="3" />
+            <circle cx="14.9" cy="8.4" r="3" />
+            <circle cx="13" cy="14.3" r="3" />
+            <circle cx="7" cy="14.3" r="3" />
+            <circle cx="5.1" cy="8.4" r="3" />
+          </>
+        ) : null}
+        {shape === "heart" ? (
+          <path d="M10 17.2S2.8 13.1 2.8 7.7c0-2.7 1.7-4.5 4-4.5 1.4 0 2.6.7 3.2 1.8.6-1.1 1.8-1.8 3.2-1.8 2.3 0 4 1.8 4 4.5 0 5.4-7.2 9.5-7.2 9.5Z" />
+        ) : null}
+      </svg>
+    </span>
+  );
+}
+
 function isUtilityTag(tag: string, card: LearningCard) {
   const normalizedTag = normalizeTagValue(tag);
 
@@ -624,10 +681,7 @@ export function LearningArchive() {
                 type="button"
               >
                 {category !== "All" ? (
-                  <span
-                    aria-hidden="true"
-                    className="h-1.5 w-1.5 rounded-full bg-sage"
-                  />
+                  <TagMark tag={category} />
                 ) : null}
                 {category}
               </button>
@@ -800,10 +854,7 @@ export function LearningArchive() {
                           className="inline-flex h-7 items-center gap-1.5 rounded-full border border-ink/20 bg-white/60 px-2.5 text-[0.68rem] font-bold lowercase text-ink/68"
                           key={tag}
                         >
-                          <span
-                            aria-hidden="true"
-                            className="h-1.5 w-1.5 rounded-full bg-sage"
-                          />
+                          <TagMark tag={tag} />
                           {tag}
                         </span>
                       ))}
@@ -943,10 +994,7 @@ export function LearningArchive() {
                   ) : (
                     <>
                       <span className="inline-flex min-w-0 flex-1 items-center gap-2 truncate px-1 text-sm font-bold text-ink">
-                        <span
-                          aria-hidden="true"
-                          className="h-1.5 w-1.5 rounded-full bg-sage"
-                        />
+                        <TagMark tag={category} />
                         {category}
                       </span>
                       <div className="flex gap-2">
@@ -1005,12 +1053,7 @@ export function LearningArchive() {
                                 onClick={() => toggleSavedCardTag(card, category)}
                                 type="button"
                               >
-                                <span
-                                  aria-hidden="true"
-                                  className={`h-1.5 w-1.5 rounded-full ${
-                                    isSelected ? "bg-sage" : "bg-ink/25"
-                                  }`}
-                                />
+                                <TagMark muted={!isSelected} tag={category} />
                                 {category}
                               </button>
                             );
