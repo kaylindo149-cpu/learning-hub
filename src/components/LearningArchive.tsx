@@ -169,10 +169,10 @@ function createTemporaryCard(capturedLink: CapturedLink): LearningCard {
       capturedLink.status,
       source,
       capturedLink.url
-    ],
+    ].filter(Boolean),
     thumbnailClass:
       "bg-[radial-gradient(circle_at_28%_30%,#fff27a_0_12%,transparent_13%),radial-gradient(circle_at_74%_24%,#b8f46f_0_14%,transparent_15%),linear-gradient(135deg,#fffdf0,#d8ffd1_48%,#ffb6c8)]",
-    thumbnailLabel: capturedLink.category
+    thumbnailLabel: capturedLink.category || "Saved link"
   };
 }
 

@@ -365,9 +365,11 @@ export default function LinkInbox() {
                         <span className="border border-sage/20 bg-white/55 px-2.5 py-1 text-sage">
                           {capturedLink.status}
                         </span>
-                        <span className="border border-ink/10 bg-white/55 px-2.5 py-1 text-ink/55">
-                          {capturedLink.category}
-                        </span>
+                        {capturedLink.category ? (
+                          <span className="border border-ink/10 bg-white/55 px-2.5 py-1 text-ink/55">
+                            {capturedLink.category}
+                          </span>
+                        ) : null}
                         <span className="text-ink/45">
                           {formatCapturedTime()}
                         </span>

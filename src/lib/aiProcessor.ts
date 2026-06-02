@@ -47,7 +47,7 @@ function createLearningCard(
     dateAdded: "Just now",
     tags: processedLink.tags,
     thumbnailClass: getThumbnailClass(capturedLink.id),
-    thumbnailLabel: processedLink.category,
+    thumbnailLabel: processedLink.category || processedLink.source || "Saved link",
     imageUrl: processedLink.imageUrl
   };
 }

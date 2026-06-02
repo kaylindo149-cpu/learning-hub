@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { defaultLearningCategory } from "@/lib/learningCategories";
 import {
   facebookSavedLinkSummary,
   getFacebookLinkTitle,
@@ -63,9 +62,13 @@ function createFacebookProcessedLink(
     title: getFacebookLinkTitle(url),
     summary: facebookSavedLinkSummary,
     category: selectedCategory,
-    tags: [selectedCategory],
+    tags: createManualTags(selectedCategory),
     source: "facebook.com"
   };
+}
+
+function createManualTags(category: string) {
+  return category ? [category] : [];
 }
 
 function decodeHtmlEntities(value: string) {
@@ -202,7 +205,7 @@ function validateProcessedLink(
         ? processedLink.summary.trim()
         : "A saved article ready to revisit.",
     category: selectedCategory,
-    tags: [selectedCategory],
+    tags: createManualTags(selectedCategory),
     source:
       typeof processedLink.source === "string" && processedLink.source.trim()
         ? processedLink.source.trim()
@@ -222,7 +225,7 @@ function createFallbackProcessedLink(
         ? `${context.text.slice(0, 180).trim()}${context.text.length > 180 ? "..." : ""}`
         : "A saved link ready to revisit."),
     category: selectedCategory,
-    tags: [selectedCategory],
+    tags: createManualTags(selectedCategory),
     source: context.source
   };
 }
@@ -260,7 +263,7 @@ Create one saved learning card from this link.
 
 URL: ${context.url}
 Source: ${context.source}
-Selected category: ${selectedCategory}
+Selected category: ${selectedCategory || "None"}
 HTML title: ${context.title || "Unknown"}
 Meta description: ${context.description || "Unknown"}
 Article excerpt:
@@ -343,9 +346,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const url = typeof body.url === "string" ? body.url.trim() : "";
     const category =
-      typeof body.category === "string" && body.category.trim()
+      typeof body.category === "string"
         ? body.category.trim().replace(/\s+/g, " ")
-        : defaultLearningCategory;
+        : "";
 
     if (!url) {
       return NextResponse.json({ error: "Missing link URL." }, { status: 400 });
@@ -376,7 +379,9 @@ export async function POST(request: Request) {
       throw error;
     });
 
-    return NextResponse.json({ card: { ...card, category, tags: [category] } });
+    return NextResponse.json({
+      card: { ...card, category, tags: createManualTags(category) }
+    });
   } catch (error) {
     return NextResponse.json(
       {

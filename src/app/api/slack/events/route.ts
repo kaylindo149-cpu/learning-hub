@@ -1,6 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { defaultLearningCategory } from "@/lib/learningCategories";
 import { appendServerCapturedLinks } from "@/lib/serverCapturedLinks";
 import {
   extractCategoryFromSlackText,
@@ -74,19 +73,10 @@ function getCaptureDate(eventTs?: string) {
   return new Date(timestamp * 1000).toISOString();
 }
 
-function getSlackCategory() {
-  const category = process.env.SLACK_LEARNING_HUB_CATEGORY?.trim().replace(
-    /\s+/g,
-    " "
-  );
-
-  return category || defaultLearningCategory;
-}
-
 function getSlackEventCategory(text?: string) {
   const selectedCategory = text ? extractCategoryFromSlackText(text) : undefined;
 
-  return selectedCategory || getSlackCategory();
+  return selectedCategory ?? "";
 }
 
 function createCapturedLinksFromSlackEvent(
