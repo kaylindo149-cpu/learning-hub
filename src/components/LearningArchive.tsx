@@ -68,7 +68,16 @@ const tagMarkColors = [
   "#7ed957",
   "#b86bff",
   "#ff7a59",
-  "#48d1b5"
+  "#48d1b5",
+  "#ff4f64",
+  "#9bdc4a",
+  "#4aa8ff",
+  "#f05bd5",
+  "#2ec4b6",
+  "#ff9f1c",
+  "#6a9cff",
+  "#c77dff",
+  "#00b894"
 ];
 
 const tagMarkShapes = ["star", "flower", "heart"] as const;
@@ -79,12 +88,24 @@ function getTagMarkSeed(tag: string) {
     .reduce((total, char) => total + char.charCodeAt(0), 0);
 }
 
-function TagMark({ muted = false, tag }: { muted?: boolean; tag: string }) {
+function TagMark({
+  colorIndex,
+  muted = false,
+  tag
+}: {
+  colorIndex?: number;
+  muted?: boolean;
+  tag: string;
+}) {
   const seed = getTagMarkSeed(tag);
   const shape = tagMarkShapes[seed % tagMarkShapes.length];
+  const resolvedColorIndex =
+    typeof colorIndex === "number" && colorIndex >= 0
+      ? colorIndex
+      : seed;
   const color = muted
     ? "rgba(45, 40, 35, 0.24)"
-    : tagMarkColors[seed % tagMarkColors.length];
+    : tagMarkColors[resolvedColorIndex % tagMarkColors.length];
 
   return (
     <span
@@ -530,6 +551,12 @@ export function LearningArchive() {
     );
   }
 
+  function getTagColorIndex(tag: string) {
+    return categoryOptions.findIndex(
+      (category) => normalizeTagValue(category) === normalizeTagValue(tag)
+    );
+  }
+
   function updateSavedCardTags(cardId: string, nextTags: string[]) {
     const nextTagSet = new Set(nextTags.map(normalizeTagValue));
     const normalizedNextTags = categoryOptions.filter((category) =>
@@ -676,7 +703,7 @@ export function LearningArchive() {
           </label>
 
           <div className="flex gap-2 overflow-x-auto pb-1 lg:ml-auto lg:pb-0">
-            {learningCategories.map((category) => (
+            {learningCategories.map((category, categoryIndex) => (
               <button
                 className={`inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-full border px-3 text-[0.68rem] font-bold lowercase tracking-normal transition ${
                   activeCategory === category
@@ -688,7 +715,7 @@ export function LearningArchive() {
                 type="button"
               >
                 {category !== "All" ? (
-                  <TagMark tag={category} />
+                  <TagMark colorIndex={categoryIndex - 1} tag={category} />
                 ) : null}
                 {category}
               </button>
@@ -861,7 +888,10 @@ export function LearningArchive() {
                           className="inline-flex h-7 items-center gap-1.5 rounded-full border border-ink/20 bg-white/60 px-2.5 text-[0.68rem] font-bold lowercase text-ink/68"
                           key={tag}
                         >
-                          <TagMark tag={tag} />
+                          <TagMark
+                            colorIndex={getTagColorIndex(tag)}
+                            tag={tag}
+                          />
                           {tag}
                         </span>
                       ))}
@@ -908,7 +938,7 @@ export function LearningArchive() {
                         </div>
                         {categoryOptions.length > 0 ? (
                           <div className="mt-3 flex flex-wrap gap-2">
-                            {categoryOptions.map((category) => {
+                            {categoryOptions.map((category, categoryIndex) => {
                               const isSelected = cardTags.some(
                                 (tag) =>
                                   normalizeTagValue(tag) ===
@@ -928,7 +958,11 @@ export function LearningArchive() {
                                   }
                                   type="button"
                                 >
-                                  <TagMark muted={!isSelected} tag={category} />
+                                  <TagMark
+                                    colorIndex={categoryIndex}
+                                    muted={!isSelected}
+                                    tag={category}
+                                  />
                                   {category}
                                 </button>
                               );
@@ -1024,7 +1058,7 @@ export function LearningArchive() {
             ) : null}
 
             <ul className="mt-5 space-y-2">
-              {categoryOptions.map((category) => (
+              {categoryOptions.map((category, categoryIndex) => (
                 <li
                   className="flex min-w-0 flex-col gap-2 border border-ink/10 bg-white/45 p-2 sm:flex-row sm:items-center"
                   key={category}
@@ -1068,7 +1102,7 @@ export function LearningArchive() {
                   ) : (
                     <>
                       <span className="inline-flex min-w-0 flex-1 items-center gap-2 truncate px-1 text-sm font-bold text-ink">
-                        <TagMark tag={category} />
+                        <TagMark colorIndex={categoryIndex} tag={category} />
                         {category}
                       </span>
                       <div className="flex gap-2">
