@@ -187,7 +187,7 @@ export function LearningArchive() {
   const [editingCategoryName, setEditingCategoryName] = useState("");
   const [categoryMessage, setCategoryMessage] = useState("");
   const [isManagingCategories, setIsManagingCategories] = useState(false);
-  const [focusedCardTagEditorId, setFocusedCardTagEditorId] = useState("");
+  const [activeCardCategoryMenuId, setActiveCardCategoryMenuId] = useState("");
   const [hiddenStarterCardIds, setHiddenStarterCardIds] = useState<string[]>(
     []
   );
@@ -515,15 +515,19 @@ export function LearningArchive() {
     }
   }
 
-  function openCategoryManager(cardId = "") {
+  function openCategoryManager() {
     setIsManagingCategories(true);
-    setFocusedCardTagEditorId(cardId);
     setCategoryMessage("");
   }
 
   function closeCategoryManager() {
     setIsManagingCategories(false);
-    setFocusedCardTagEditorId("");
+  }
+
+  function toggleCardCategoryMenu(cardId: string) {
+    setActiveCardCategoryMenuId((currentCardId) =>
+      currentCardId === cardId ? "" : cardId
+    );
   }
 
   function updateSavedCardTags(cardId: string, nextTags: string[]) {
@@ -787,7 +791,7 @@ export function LearningArchive() {
             const cardTags = getCardTags(card, categoryOptions);
 
             return (
-              <article className="group" key={card.id}>
+              <article className="group relative" key={card.id}>
                 <a
                   aria-disabled={isSelectingCards}
                   className={`block ${
@@ -869,13 +873,71 @@ export function LearningArchive() {
                   </div>
                 </a>
                 {isSavedUserCard(card) && !isSelectingCards ? (
-                  <button
-                    className="mt-4 inline-flex h-8 items-center rounded-full border border-ink/15 bg-white/55 px-3 text-[0.68rem] font-bold lowercase text-ink/60 transition hover:border-sage hover:text-sage"
-                    onClick={() => openCategoryManager(card.id)}
-                    type="button"
-                  >
-                    edit categories
-                  </button>
+                  <>
+                    <button
+                      aria-expanded={activeCardCategoryMenuId === card.id}
+                      aria-label="Edit card categories"
+                      className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-paper/90 text-lg font-black leading-none text-ink shadow-soft transition hover:border-sage hover:text-sage"
+                      onClick={() => toggleCardCategoryMenu(card.id)}
+                      type="button"
+                    >
+                      ...
+                    </button>
+                    {activeCardCategoryMenuId === card.id ? (
+                      <div className="absolute right-3 top-14 z-30 w-72 border border-ink/10 bg-paper p-3 shadow-soft">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-xs font-bold uppercase tracking-[0.16em] text-sage">
+                            Categories
+                          </p>
+                          <button
+                            className="text-xs font-bold lowercase text-ink/45 transition hover:text-sage"
+                            onClick={() => setActiveCardCategoryMenuId("")}
+                            type="button"
+                          >
+                            done
+                          </button>
+                        </div>
+                        {categoryOptions.length > 0 ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {categoryOptions.map((category) => {
+                              const isSelected = cardTags.some(
+                                (tag) =>
+                                  normalizeTagValue(tag) ===
+                                  normalizeTagValue(category)
+                              );
+
+                              return (
+                                <button
+                                  className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[0.68rem] font-bold lowercase transition ${
+                                    isSelected
+                                      ? "border-ink bg-ink text-paper"
+                                      : "border-ink/20 bg-white/60 text-ink/60 hover:border-sage hover:text-sage"
+                                  }`}
+                                  key={category}
+                                  onClick={() =>
+                                    toggleSavedCardTag(card, category)
+                                  }
+                                  type="button"
+                                >
+                                  <TagMark muted={!isSelected} tag={category} />
+                                  {category}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="mt-3 text-sm font-semibold leading-6 text-ink/50">
+                            Create tags from manage tags first.
+                          </p>
+                        )}
+                        {cardTags.length === 0 ? (
+                          <p className="mt-3 text-xs font-bold lowercase text-ink/42">
+                            no categories selected
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </>
                 ) : null}
               </article>
             );
@@ -1021,80 +1083,6 @@ export function LearningArchive() {
                 </li>
               ))}
             </ul>
-
-            {savedCards.length > 0 ? (
-              <div className="mt-7 border-t border-ink/10 pt-5">
-                <h3 className="font-serif text-2xl text-ink">Card tags</h3>
-                <div className="mt-4 space-y-3">
-                  {[...savedCards]
-                    .sort((firstCard, secondCard) => {
-                      if (firstCard.id === focusedCardTagEditorId) {
-                        return -1;
-                      }
-
-                      if (secondCard.id === focusedCardTagEditorId) {
-                        return 1;
-                      }
-
-                      return 0;
-                    })
-                    .map((card) => {
-                      const cardTags = getCardTags(card, categoryOptions);
-                      const isFocusedCard =
-                        card.id === focusedCardTagEditorId;
-
-                      return (
-                        <div
-                          className={`border p-3 ${
-                            isFocusedCard
-                              ? "border-sage/70 bg-white/70"
-                              : "border-ink/10 bg-white/35"
-                          }`}
-                          key={card.id}
-                        >
-                          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="truncate text-sm font-bold text-ink">
-                              {card.title}
-                            </p>
-                            {cardTags.length === 0 ? (
-                              <span className="text-xs font-bold lowercase text-ink/42">
-                                no categories
-                              </span>
-                            ) : null}
-                          </div>
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {categoryOptions.map((category) => {
-                              const isSelected = cardTags.some(
-                                (tag) =>
-                                  normalizeTagValue(tag) ===
-                                  normalizeTagValue(category)
-                              );
-
-                              return (
-                                <button
-                                  className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[0.68rem] font-bold lowercase transition ${
-                                    isSelected
-                                      ? "border-ink bg-ink text-paper"
-                                      : "border-ink/20 bg-paper/70 text-ink/60 hover:border-sage hover:text-sage"
-                                  }`}
-                                  key={category}
-                                  onClick={() =>
-                                    toggleSavedCardTag(card, category)
-                                  }
-                                  type="button"
-                                >
-                                  <TagMark muted={!isSelected} tag={category} />
-                                  {category}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            ) : null}
           </section>
         </div>
       ) : null}
