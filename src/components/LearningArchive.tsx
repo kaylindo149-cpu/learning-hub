@@ -602,6 +602,15 @@ export function LearningArchive() {
 
   return (
     <main className="min-h-screen bg-paper text-ink">
+      {activeCardCategoryMenuId ? (
+        <button
+          aria-label="Close card category menu"
+          className="fixed inset-0 z-20 cursor-default bg-transparent"
+          onClick={() => setActiveCardCategoryMenuId("")}
+          type="button"
+        />
+      ) : null}
+
       <header className="relative mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-8 sm:px-8 lg:px-10">
         <button
           aria-label="Open navigation"
@@ -877,7 +886,7 @@ export function LearningArchive() {
                     <button
                       aria-expanded={activeCardCategoryMenuId === card.id}
                       aria-label="Edit card categories"
-                      className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-paper/90 text-lg font-black leading-none text-ink shadow-soft transition hover:border-sage hover:text-sage"
+                      className="absolute right-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-paper/90 text-lg font-black leading-none text-ink shadow-soft transition hover:border-sage hover:text-sage"
                       onClick={() => toggleCardCategoryMenu(card.id)}
                       type="button"
                     >
