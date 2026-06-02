@@ -58,13 +58,3 @@ export function getFacebookLinkTitle(url: string) {
 
   return "Facebook link";
 }
-
-export function getFacebookTags(url: string) {
-  return [
-    "facebook",
-    getFacebookLinkTitle(url).replace(/^facebook\s+/i, ""),
-    "saved link"
-  ]
-    .filter(Boolean)
-    .slice(0, 4);
-}

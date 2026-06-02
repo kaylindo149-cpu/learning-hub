@@ -2,7 +2,6 @@ import type { LearningCard } from "@/data/learningCards";
 import {
   facebookSavedLinkSummary,
   getFacebookLinkTitle,
-  getFacebookTags,
   isFacebookUrl
 } from "@/lib/socialLinkCards";
 
@@ -61,7 +60,7 @@ function normalizeSavedCard(card: LearningCard) {
     ...card,
     title: getFacebookLinkTitle(card.url),
     summary: facebookSavedLinkSummary,
-    tags: getFacebookTags(card.url),
+    tags: card.tags.length > 0 ? card.tags : [card.category],
     source: "facebook.com",
     thumbnailLabel: card.thumbnailLabel === "Facebook" ? "Facebook" : card.thumbnailLabel
   };

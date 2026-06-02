@@ -74,18 +74,22 @@ function isUtilityTag(tag: string, card: LearningCard) {
   );
 }
 
-function getCardTags(card: LearningCard) {
+function getCardTags(card: LearningCard, tagOptions: string[]) {
+  const tagLookup = new Map(
+    tagOptions.map((tag) => [normalizeTagValue(tag), tag] as const)
+  );
   const tagMap = new Map<string, string>();
 
   [card.category, ...card.tags].forEach((tag) => {
     const normalizedTag = normalizeTagValue(tag);
+    const manualTag = tagLookup.get(normalizedTag);
 
-    if (!normalizedTag || isUtilityTag(tag, card)) {
+    if (!manualTag || isUtilityTag(tag, card)) {
       return;
     }
 
     if (!tagMap.has(normalizedTag)) {
-      tagMap.set(normalizedTag, normalizeCategoryName(tag));
+      tagMap.set(normalizedTag, manualTag);
     }
   });
 
@@ -260,21 +264,9 @@ export function LearningArchive() {
     [capturedLinks, savedCards, visibleStarterCards]
   );
 
-  const learningCategories = useMemo(() => {
-    const tagMap = new Map<string, string>();
-
-    [...categoryOptions, ...allCards.flatMap(getCardTags)].forEach((tag) => {
-      const normalizedTag = normalizeTagValue(tag);
-
-      if (!normalizedTag || tagMap.has(normalizedTag)) {
-        return;
-      }
-
-      tagMap.set(normalizedTag, tag);
-    });
-
-    return ["All", ...Array.from(tagMap.values())];
-  }, [allCards, categoryOptions]);
+  const learningCategories = useMemo(() => ["All", ...categoryOptions], [
+    categoryOptions
+  ]);
 
   const filteredCards = useMemo(() => {
     const search = searchTerm.trim().toLowerCase();
@@ -282,16 +274,16 @@ export function LearningArchive() {
     return allCards.filter((card) => {
       const matchesCategory =
         activeCategory === "All" ||
-        getCardTags(card).some(
+        getCardTags(card, categoryOptions).some(
           (tag) => normalizeTagValue(tag) === normalizeTagValue(activeCategory)
         );
+      const manualTags = getCardTags(card, categoryOptions);
       const searchableText = [
-        card.category,
         card.title,
         card.summary,
         card.source,
         card.url,
-        ...card.tags
+        ...manualTags
       ]
         .join(" ")
         .toLowerCase();
@@ -472,6 +464,55 @@ export function LearningArchive() {
   function openCategoryManager() {
     setIsManagingCategories(true);
     setCategoryMessage("");
+  }
+
+  function updateSavedCardTags(cardId: string, nextTags: string[]) {
+    if (nextTags.length === 0) {
+      setCategoryMessage("Keep at least one tag on each card.");
+      return;
+    }
+
+    const nextTagSet = new Set(nextTags.map(normalizeTagValue));
+    const normalizedNextTags = categoryOptions.filter((category) =>
+      nextTagSet.has(normalizeTagValue(category))
+    );
+    const primaryTag = normalizedNextTags[0];
+
+    if (!primaryTag) {
+      setCategoryMessage("Choose an existing tag first.");
+      return;
+    }
+
+    saveSavedLearningCards(
+      readSavedLearningCards().map((card) =>
+        card.id === cardId
+          ? {
+              ...card,
+              category: primaryTag,
+              tags: normalizedNextTags,
+              thumbnailLabel:
+                card.thumbnailLabel === card.category
+                  ? primaryTag
+                  : card.thumbnailLabel
+            }
+          : card
+      )
+    );
+    setCategoryMessage("");
+  }
+
+  function toggleSavedCardTag(card: LearningCard, tag: string) {
+    const currentTags = getCardTags(card, categoryOptions);
+    const normalizedTag = normalizeTagValue(tag);
+    const nextTags = currentTags.some(
+      (currentTag) => normalizeTagValue(currentTag) === normalizedTag
+    )
+      ? currentTags.filter(
+          (currentTag) => normalizeTagValue(currentTag) !== normalizedTag
+        )
+      : [...currentTags, tag];
+
+    updateSavedCardTags(card.id, nextTags);
   }
 
   function deleteSelectedCards() {
@@ -695,7 +736,7 @@ export function LearningArchive() {
               : null;
             const isDeletable = isDeletableCard(card);
             const isSelected = selectedCardIds.includes(card.id);
-            const cardTags = getCardTags(card);
+            const cardTags = getCardTags(card, categoryOptions);
 
             return (
               <article className="group" key={card.id}>
@@ -929,6 +970,58 @@ export function LearningArchive() {
                 </li>
               ))}
             </ul>
+
+            {savedCards.length > 0 ? (
+              <div className="mt-7 border-t border-ink/10 pt-5">
+                <h3 className="font-serif text-2xl text-ink">Card tags</h3>
+                <div className="mt-4 space-y-3">
+                  {savedCards.map((card) => {
+                    const cardTags = getCardTags(card, categoryOptions);
+
+                    return (
+                      <div
+                        className="border border-ink/10 bg-white/35 p-3"
+                        key={card.id}
+                      >
+                        <p className="truncate text-sm font-bold text-ink">
+                          {card.title}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {categoryOptions.map((category) => {
+                            const isSelected = cardTags.some(
+                              (tag) =>
+                                normalizeTagValue(tag) ===
+                                normalizeTagValue(category)
+                            );
+
+                            return (
+                              <button
+                                className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[0.68rem] font-bold lowercase transition ${
+                                  isSelected
+                                    ? "border-ink bg-ink text-paper"
+                                    : "border-ink/20 bg-paper/70 text-ink/60 hover:border-sage hover:text-sage"
+                                }`}
+                                key={category}
+                                onClick={() => toggleSavedCardTag(card, category)}
+                                type="button"
+                              >
+                                <span
+                                  aria-hidden="true"
+                                  className={`h-1.5 w-1.5 rounded-full ${
+                                    isSelected ? "bg-sage" : "bg-ink/25"
+                                  }`}
+                                />
+                                {category}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
           </section>
         </div>
       ) : null}

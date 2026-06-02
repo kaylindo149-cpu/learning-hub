@@ -3,7 +3,6 @@ import { defaultLearningCategory } from "@/lib/learningCategories";
 import {
   facebookSavedLinkSummary,
   getFacebookLinkTitle,
-  getFacebookTags,
   isFacebookUrl
 } from "@/lib/socialLinkCards";
 
@@ -64,7 +63,7 @@ function createFacebookProcessedLink(
     title: getFacebookLinkTitle(url),
     summary: facebookSavedLinkSummary,
     category: selectedCategory,
-    tags: getFacebookTags(url),
+    tags: [selectedCategory],
     source: "facebook.com"
   };
 }
@@ -182,15 +181,16 @@ function windowlessSetTimeout(callback: () => void, delay: number) {
   return setTimeout(callback, delay);
 }
 
-function validateProcessedLink(value: unknown, source: string): ProcessedLink {
+function validateProcessedLink(
+  value: unknown,
+  source: string,
+  selectedCategory: string
+): ProcessedLink {
   if (!value || typeof value !== "object") {
     throw new Error("AI response was not an object.");
   }
 
   const processedLink = value as Partial<ProcessedLink>;
-  const tags = Array.isArray(processedLink.tags)
-    ? processedLink.tags.filter((tag) => typeof tag === "string").slice(0, 4)
-    : [];
 
   return {
     title:
@@ -201,11 +201,8 @@ function validateProcessedLink(value: unknown, source: string): ProcessedLink {
       typeof processedLink.summary === "string" && processedLink.summary.trim()
         ? processedLink.summary.trim()
         : "A saved article ready to revisit.",
-    category:
-      typeof processedLink.category === "string" && processedLink.category.trim()
-        ? processedLink.category.trim()
-        : "Learn Later",
-    tags: tags.length > 0 ? tags : ["learn later"],
+    category: selectedCategory,
+    tags: [selectedCategory],
     source:
       typeof processedLink.source === "string" && processedLink.source.trim()
         ? processedLink.source.trim()
@@ -225,7 +222,7 @@ function createFallbackProcessedLink(
         ? `${context.text.slice(0, 180).trim()}${context.text.length > 180 ? "..." : ""}`
         : "A saved link ready to revisit."),
     category: selectedCategory,
-    tags: ["learn later", context.source].filter(Boolean).slice(0, 4),
+    tags: [selectedCategory],
     source: context.source
   };
 }
@@ -272,9 +269,9 @@ ${context.text || "No readable article text was available."}
 Return:
 - title: the real article/page title, cleaned up
 - summary: one short sentence summarizing the article content in the same language as the article/page. Do not translate the summary into English unless the original article is English.
-- category: exactly "${selectedCategory}"
-- tags: 2 to 4 specific lowercase tags
-- source: domain/source name`;
+- source: domain/source name
+
+Do not create tags. Tags are managed manually by the user.`;
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -296,17 +293,10 @@ Return:
           response_mime_type: "application/json",
           response_schema: {
             type: "OBJECT",
-            required: ["title", "summary", "category", "tags", "source"],
+            required: ["title", "summary", "source"],
             properties: {
               title: { type: "STRING" },
               summary: { type: "STRING" },
-              category: { type: "STRING" },
-              tags: {
-                type: "ARRAY",
-                minItems: 2,
-                maxItems: 4,
-                items: { type: "STRING" }
-              },
               source: { type: "STRING" }
             }
           }
@@ -341,7 +331,8 @@ Return:
   return {
     ...validateProcessedLink(
       parseGeminiJsonOutput(outputText),
-      context.source
+      context.source,
+      selectedCategory
     ),
     imageUrl: context.imageUrl
   };
@@ -385,7 +376,7 @@ export async function POST(request: Request) {
       throw error;
     });
 
-    return NextResponse.json({ card: { ...card, category } });
+    return NextResponse.json({ card: { ...card, category, tags: [category] } });
   } catch (error) {
     return NextResponse.json(
       {
