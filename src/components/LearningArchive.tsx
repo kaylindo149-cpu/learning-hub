@@ -187,6 +187,7 @@ export function LearningArchive() {
   const [editingCategoryName, setEditingCategoryName] = useState("");
   const [categoryMessage, setCategoryMessage] = useState("");
   const [isManagingCategories, setIsManagingCategories] = useState(false);
+  const [focusedCardTagEditorId, setFocusedCardTagEditorId] = useState("");
   const [hiddenStarterCardIds, setHiddenStarterCardIds] = useState<string[]>(
     []
   );
@@ -347,7 +348,7 @@ export function LearningArchive() {
 
       return matchesCategory && (!search || searchableText.includes(search));
     });
-  }, [activeCategory, allCards, searchTerm]);
+  }, [activeCategory, allCards, categoryOptions, searchTerm]);
 
   const selectedCardsCount = selectedCardIds.length;
   const hasDeletableCards = filteredCards.some(isDeletableCard);
@@ -369,7 +370,7 @@ export function LearningArchive() {
   function saveCategoryChanges(
     nextCategories: string[],
     renamedCategory?: { from: string; to: string },
-    deletedCategory?: { category: string; fallback: string }
+    deletedCategory?: { category: string }
   ) {
     saveLearningCategories(nextCategories);
 
@@ -402,25 +403,30 @@ export function LearningArchive() {
 
     if (deletedCategory) {
       saveSavedLearningCards(
-        readSavedLearningCards().map((card) => ({
-          ...card,
-          category:
+        readSavedLearningCards().map((card) => {
+          const nextTags = card.tags.filter(
+            (tag) => tag !== deletedCategory.category
+          );
+          const nextCategory =
             card.category === deletedCategory.category
-              ? deletedCategory.fallback
-              : card.category,
-          tags: card.tags.map((tag) =>
-            tag === deletedCategory.category ? deletedCategory.fallback : tag
-          ),
-          thumbnailLabel:
-            card.thumbnailLabel === deletedCategory.category
-              ? deletedCategory.fallback
-              : card.thumbnailLabel
-        }))
+              ? nextTags[0] ?? ""
+              : card.category;
+
+          return {
+            ...card,
+            category: nextCategory,
+            tags: nextTags,
+            thumbnailLabel:
+              card.thumbnailLabel === deletedCategory.category
+                ? nextCategory || "Saved link"
+                : card.thumbnailLabel
+          };
+        })
       );
       saveCapturedLinks(
         readCapturedLinks().map((capturedLink) =>
           capturedLink.category === deletedCategory.category
-            ? { ...capturedLink, category: deletedCategory.fallback }
+            ? { ...capturedLink, category: "" }
             : capturedLink
         )
       );
@@ -496,49 +502,36 @@ export function LearningArchive() {
   }
 
   function handleDeleteCategory(category: string) {
-    if (categoryOptions.length <= 1) {
-      setCategoryMessage("Keep at least one category.");
-      return;
-    }
-
     const nextCategories = categoryOptions.filter(
       (currentCategory) => currentCategory !== category
     );
-    const fallbackCategory = nextCategories[0];
 
     saveCategoryChanges(nextCategories, undefined, {
-      category,
-      fallback: fallbackCategory
+      category
     });
-    setCategoryMessage(
-      `Deleted ${category}. Existing cards moved to ${fallbackCategory}.`
-    );
+    setCategoryMessage(`Deleted ${category}. Existing cards were updated.`);
     if (editingCategory === category) {
       cancelRenamingCategory();
     }
   }
 
-  function openCategoryManager() {
+  function openCategoryManager(cardId = "") {
     setIsManagingCategories(true);
+    setFocusedCardTagEditorId(cardId);
     setCategoryMessage("");
   }
 
-  function updateSavedCardTags(cardId: string, nextTags: string[]) {
-    if (nextTags.length === 0) {
-      setCategoryMessage("Keep at least one tag on each card.");
-      return;
-    }
+  function closeCategoryManager() {
+    setIsManagingCategories(false);
+    setFocusedCardTagEditorId("");
+  }
 
+  function updateSavedCardTags(cardId: string, nextTags: string[]) {
     const nextTagSet = new Set(nextTags.map(normalizeTagValue));
     const normalizedNextTags = categoryOptions.filter((category) =>
       nextTagSet.has(normalizeTagValue(category))
     );
-    const primaryTag = normalizedNextTags[0];
-
-    if (!primaryTag) {
-      setCategoryMessage("Choose an existing tag first.");
-      return;
-    }
+    const primaryTag = normalizedNextTags[0] ?? "";
 
     saveSavedLearningCards(
       readSavedLearningCards().map((card) =>
@@ -548,8 +541,9 @@ export function LearningArchive() {
               category: primaryTag,
               tags: normalizedNextTags,
               thumbnailLabel:
-                card.thumbnailLabel === card.category
-                  ? primaryTag
+                card.thumbnailLabel === card.category ||
+                card.thumbnailLabel === "Saved link"
+                  ? primaryTag || "Saved link"
                   : card.thumbnailLabel
             }
           : card
@@ -688,7 +682,7 @@ export function LearningArchive() {
             ))}
             <button
               className="inline-flex h-9 items-center whitespace-nowrap rounded-full border border-ink/15 bg-paper/80 px-3 text-[0.68rem] font-bold lowercase tracking-normal text-sage transition hover:border-sage hover:bg-white"
-              onClick={openCategoryManager}
+              onClick={() => openCategoryManager()}
               type="button"
             >
               manage tags
@@ -874,6 +868,15 @@ export function LearningArchive() {
                     </div>
                   </div>
                 </a>
+                {isSavedUserCard(card) && !isSelectingCards ? (
+                  <button
+                    className="mt-4 inline-flex h-8 items-center rounded-full border border-ink/15 bg-white/55 px-3 text-[0.68rem] font-bold lowercase text-ink/60 transition hover:border-sage hover:text-sage"
+                    onClick={() => openCategoryManager(card.id)}
+                    type="button"
+                  >
+                    edit categories
+                  </button>
+                ) : null}
               </article>
             );
           })}
@@ -898,7 +901,7 @@ export function LearningArchive() {
           <button
             aria-label="Close tag manager"
             className="absolute inset-0 bg-ink/30 backdrop-blur-sm"
-            onClick={() => setIsManagingCategories(false)}
+            onClick={closeCategoryManager}
             type="button"
           />
           <section className="relative max-h-[min(42rem,calc(100vh-2.5rem))] w-full max-w-2xl overflow-y-auto border border-ink/10 bg-paper p-5 shadow-soft sm:p-6">
@@ -911,7 +914,7 @@ export function LearningArchive() {
               </div>
               <button
                 className="h-10 border border-ink/15 bg-white/55 px-4 text-xs font-bold uppercase tracking-[0.14em] text-ink/65 transition hover:border-sage hover:text-sage"
-                onClick={() => setIsManagingCategories(false)}
+                onClick={closeCategoryManager}
                 type="button"
               >
                 Close
@@ -1023,45 +1026,72 @@ export function LearningArchive() {
               <div className="mt-7 border-t border-ink/10 pt-5">
                 <h3 className="font-serif text-2xl text-ink">Card tags</h3>
                 <div className="mt-4 space-y-3">
-                  {savedCards.map((card) => {
-                    const cardTags = getCardTags(card, categoryOptions);
+                  {[...savedCards]
+                    .sort((firstCard, secondCard) => {
+                      if (firstCard.id === focusedCardTagEditorId) {
+                        return -1;
+                      }
 
-                    return (
-                      <div
-                        className="border border-ink/10 bg-white/35 p-3"
-                        key={card.id}
-                      >
-                        <p className="truncate text-sm font-bold text-ink">
-                          {card.title}
-                        </p>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {categoryOptions.map((category) => {
-                            const isSelected = cardTags.some(
-                              (tag) =>
-                                normalizeTagValue(tag) ===
-                                normalizeTagValue(category)
-                            );
+                      if (secondCard.id === focusedCardTagEditorId) {
+                        return 1;
+                      }
 
-                            return (
-                              <button
-                                className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[0.68rem] font-bold lowercase transition ${
-                                  isSelected
-                                    ? "border-ink bg-ink text-paper"
-                                    : "border-ink/20 bg-paper/70 text-ink/60 hover:border-sage hover:text-sage"
-                                }`}
-                                key={category}
-                                onClick={() => toggleSavedCardTag(card, category)}
-                                type="button"
-                              >
-                                <TagMark muted={!isSelected} tag={category} />
-                                {category}
-                              </button>
-                            );
-                          })}
+                      return 0;
+                    })
+                    .map((card) => {
+                      const cardTags = getCardTags(card, categoryOptions);
+                      const isFocusedCard =
+                        card.id === focusedCardTagEditorId;
+
+                      return (
+                        <div
+                          className={`border p-3 ${
+                            isFocusedCard
+                              ? "border-sage/70 bg-white/70"
+                              : "border-ink/10 bg-white/35"
+                          }`}
+                          key={card.id}
+                        >
+                          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="truncate text-sm font-bold text-ink">
+                              {card.title}
+                            </p>
+                            {cardTags.length === 0 ? (
+                              <span className="text-xs font-bold lowercase text-ink/42">
+                                no categories
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {categoryOptions.map((category) => {
+                              const isSelected = cardTags.some(
+                                (tag) =>
+                                  normalizeTagValue(tag) ===
+                                  normalizeTagValue(category)
+                              );
+
+                              return (
+                                <button
+                                  className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[0.68rem] font-bold lowercase transition ${
+                                    isSelected
+                                      ? "border-ink bg-ink text-paper"
+                                      : "border-ink/20 bg-paper/70 text-ink/60 hover:border-sage hover:text-sage"
+                                  }`}
+                                  key={category}
+                                  onClick={() =>
+                                    toggleSavedCardTag(card, category)
+                                  }
+                                  type="button"
+                                >
+                                  <TagMark muted={!isSelected} tag={category} />
+                                  {category}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               </div>
             ) : null}
