@@ -12,7 +12,10 @@ import {
   processCapturedLinkWithAi,
   processCapturedLinksWithAi
 } from "@/lib/aiProcessor";
-import { learningCategoryOptions } from "@/lib/learningCategories";
+import {
+  learningCategoriesChangedEvent,
+  readLearningCategories
+} from "@/lib/learningCategories";
 
 const defaultMessage =
   "This is a quiet holding place for links before they become cards.";
@@ -21,6 +24,20 @@ const linkInputId = "link-inbox-url";
 
 function formatCapturedTime() {
   return "Just now";
+}
+
+function formatCapturedError(error: string) {
+  const normalizedError = error.toLowerCase();
+
+  if (
+    normalizedError.includes("gemini request failed") ||
+    normalizedError.includes("unavailable") ||
+    normalizedError.includes("high demand")
+  ) {
+    return "AI is temporarily busy. Try again in a moment.";
+  }
+
+  return error.length > 160 ? `${error.slice(0, 157).trim()}...` : error;
 }
 
 function isCapturedLink(value: unknown): value is CapturedLink {
@@ -68,11 +85,36 @@ async function acknowledgeSlackCapturedLinks(ids: string[]) {
 
 export default function LinkInbox() {
   const [link, setLink] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(
-    learningCategoryOptions[0]
-  );
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [message, setMessage] = useState(defaultMessage);
   const [capturedLinks, setCapturedLinks] = useState<CapturedLink[]>([]);
+
+  useEffect(() => {
+    function syncLearningCategories() {
+      const nextCategories = readLearningCategories();
+
+      setCategoryOptions(nextCategories);
+      setSelectedCategory((currentCategory) =>
+        currentCategory && nextCategories.includes(currentCategory)
+          ? currentCategory
+          : nextCategories[0]
+      );
+    }
+
+    syncLearningCategories();
+    window.addEventListener(
+      learningCategoriesChangedEvent,
+      syncLearningCategories
+    );
+
+    return () => {
+      window.removeEventListener(
+        learningCategoriesChangedEvent,
+        syncLearningCategories
+      );
+    };
+  }, []);
 
   useEffect(() => {
     function syncCapturedLinks() {
@@ -167,7 +209,7 @@ export default function LinkInbox() {
     const capturedLink: CapturedLink = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       url: trimmedLink,
-      category: selectedCategory,
+      category: selectedCategory || categoryOptions[0],
       status: "Pending",
       capturedAt: new Date().toISOString()
     };
@@ -186,6 +228,21 @@ export default function LinkInbox() {
   function handleClearCapturedLinks() {
     setCapturedLinks([]);
     clearCapturedLinks();
+  }
+
+  function handleRetryCapturedLink(capturedLink: CapturedLink) {
+    const retryLink: CapturedLink = {
+      ...capturedLink,
+      status: "Pending",
+      error: undefined
+    };
+    const nextCapturedLinks = readCapturedLinks().map((storedLink) =>
+      storedLink.id === capturedLink.id ? retryLink : storedLink
+    );
+
+    setCapturedLinks(nextCapturedLinks);
+    saveCapturedLinks(nextCapturedLinks);
+    void processCapturedLinkWithAi(retryLink);
   }
 
   return (
@@ -238,12 +295,12 @@ export default function LinkInbox() {
                   onChange={(event) => setSelectedCategory(event.target.value)}
                   value={selectedCategory}
                 >
-                  {learningCategoryOptions.map((category) => (
+                  {categoryOptions.map((category) => (
                     <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
+                      {category}
+                    </option>
+                  ))}
+                </select>
                 <span
                   aria-hidden="true"
                   className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-xl leading-none text-ink/70"
@@ -290,20 +347,21 @@ export default function LinkInbox() {
               <ul className="mt-4 space-y-3">
                 {capturedLinks.map((capturedLink) => (
                   <li
-                    className="overflow-hidden border border-ink/10 bg-paper/70 px-4 py-3"
+                    className="min-w-0 overflow-hidden border border-ink/10 bg-paper/70 px-4 py-3"
                     key={capturedLink.id}
                   >
-                    <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+                    <div className="flex min-w-0 flex-col gap-3">
                       <a
-                        className="min-w-0 overflow-wrap-anywhere text-sm font-semibold leading-6 text-ink transition hover:text-sage"
+                        className="block max-w-full truncate text-sm font-semibold leading-6 text-ink transition hover:text-sage"
                         href={capturedLink.url}
                         rel="noreferrer"
                         target="_blank"
+                        title={capturedLink.url}
                       >
                         {capturedLink.url}
                       </a>
 
-                      <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.14em]">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.14em]">
                         <span className="border border-sage/20 bg-white/55 px-2.5 py-1 text-sage">
                           {capturedLink.status}
                         </span>
@@ -313,11 +371,20 @@ export default function LinkInbox() {
                         <span className="text-ink/45">
                           {formatCapturedTime()}
                         </span>
+                        {capturedLink.status === "Failed" ? (
+                          <button
+                            className="border border-ink/10 bg-white/70 px-2.5 py-1 text-ink/60 transition hover:border-sage/30 hover:text-sage"
+                            onClick={() => handleRetryCapturedLink(capturedLink)}
+                            type="button"
+                          >
+                            Retry
+                          </button>
+                        ) : null}
                       </div>
                     </div>
                     {capturedLink.error ? (
-                      <p className="mt-3 overflow-wrap-anywhere text-sm font-semibold leading-6 text-clay">
-                        {capturedLink.error}
+                      <p className="mt-3 text-sm font-semibold leading-6 text-clay">
+                        {formatCapturedError(capturedLink.error)}
                       </p>
                     ) : null}
                   </li>

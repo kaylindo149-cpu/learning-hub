@@ -1,4 +1,10 @@
 import type { LearningCard } from "@/data/learningCards";
+import {
+  facebookSavedLinkSummary,
+  getFacebookLinkTitle,
+  getFacebookTags,
+  isFacebookUrl
+} from "@/lib/socialLinkCards";
 
 export const savedLearningCardsStorageKey =
   "kaylins-learning-hub-saved-learning-cards";
@@ -34,6 +40,33 @@ function notifySavedLearningCardsChanged() {
   window.dispatchEvent(new Event(savedLearningCardsChangedEvent));
 }
 
+function isGenericFacebookCard(card: LearningCard) {
+  const normalizedSummary = card.summary.toLowerCase();
+
+  return (
+    isFacebookUrl(card.url) &&
+    (card.title.trim().toLowerCase() === "facebook" ||
+      normalizedSummary.includes("facebook platform") ||
+      normalizedSummary.includes("login") ||
+      normalizedSummary.includes("account creation"))
+  );
+}
+
+function normalizeSavedCard(card: LearningCard) {
+  if (!isGenericFacebookCard(card)) {
+    return card;
+  }
+
+  return {
+    ...card,
+    title: getFacebookLinkTitle(card.url),
+    summary: facebookSavedLinkSummary,
+    tags: getFacebookTags(card.url),
+    source: "facebook.com",
+    thumbnailLabel: card.thumbnailLabel === "Facebook" ? "Facebook" : card.thumbnailLabel
+  };
+}
+
 export function readSavedLearningCards(): LearningCard[] {
   if (typeof window === "undefined") {
     return [];
@@ -46,9 +79,19 @@ export function readSavedLearningCards(): LearningCard[] {
     }
 
     const parsed = JSON.parse(value);
-    savedLearningCardsFallback = Array.isArray(parsed)
+    const savedCards = Array.isArray(parsed)
       ? parsed.filter(isLearningCard)
       : [];
+    const normalizedSavedCards = savedCards.map(normalizeSavedCard);
+
+    savedLearningCardsFallback = normalizedSavedCards;
+
+    if (normalizedSavedCards.some((card, index) => card !== savedCards[index])) {
+      window.localStorage.setItem(
+        savedLearningCardsStorageKey,
+        JSON.stringify(normalizedSavedCards)
+      );
+    }
 
     return savedLearningCardsFallback;
   } catch {

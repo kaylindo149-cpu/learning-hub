@@ -42,6 +42,40 @@ SLACK_LEARNING_HUB_CATEGORY=Learn Later
 
 When a Slack message in that channel contains one or more `http` or `https` links, the app stores them in a small local server queue. The Learning Hub page checks that queue every few seconds, imports the links into Captured Links, and then the existing AI flow turns them into saved cards.
 
+On Vercel, use Upstash Redis or Vercel KV for the Slack queue:
+
+```bash
+UPSTASH_REDIS_REST_URL=your-upstash-rest-url
+UPSTASH_REDIS_REST_TOKEN=your-upstash-rest-token
+```
+
+## Deploy to Vercel
+
+1. Commit and push the latest code to GitHub:
+
+```bash
+git add .
+git commit -m "Add category management"
+git push origin main
+```
+
+2. In Vercel, import the GitHub repo `learning-hub`, or open the existing project if it is already connected.
+3. Set these environment variables in **Project Settings → Environment Variables**:
+
+```bash
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-2.5-flash
+SLACK_SIGNING_SECRET=your-slack-signing-secret
+SLACK_LEARNING_HUB_CHANNEL_ID=your-slack-channel-id
+SLACK_LEARNING_HUB_CATEGORY=Learn Later
+UPSTASH_REDIS_REST_URL=your-upstash-rest-url
+UPSTASH_REDIS_REST_TOKEN=your-upstash-rest-token
+```
+
+Only `GEMINI_API_KEY` is required for normal link summarizing. Slack variables are needed only if you use Slack capture.
+
+4. Deploy. If the project is connected to GitHub, every push to `main` will trigger a Vercel production deployment.
+
 ## How to run it later
 
 Install the project packages, then start the local website:

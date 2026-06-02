@@ -1,8 +1,21 @@
 import { NextResponse } from "next/server";
-import { learningCategoryOptions } from "@/lib/learningCategories";
+import { defaultLearningCategory } from "@/lib/learningCategories";
+import {
+  facebookSavedLinkSummary,
+  getFacebookLinkTitle,
+  getFacebookTags,
+  isFacebookUrl
+} from "@/lib/socialLinkCards";
 
 const maxArticleCharacters = 12000;
 const model = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+
+class TemporaryAiError extends Error {
+  constructor(message = "Gemini is temporarily unavailable.") {
+    super(message);
+    this.name = "TemporaryAiError";
+  }
+}
 
 type ProcessedLink = {
   title: string;
@@ -10,6 +23,15 @@ type ProcessedLink = {
   category: string;
   tags: string[];
   source: string;
+  imageUrl?: string;
+};
+
+type ArticleContext = {
+  url: string;
+  source: string;
+  title: string;
+  description: string;
+  text: string;
   imageUrl?: string;
 };
 
@@ -32,6 +54,19 @@ function getSource(url: string) {
   } catch {
     return url;
   }
+}
+
+function createFacebookProcessedLink(
+  url: string,
+  selectedCategory: string
+): ProcessedLink {
+  return {
+    title: getFacebookLinkTitle(url),
+    summary: facebookSavedLinkSummary,
+    category: selectedCategory,
+    tags: getFacebookTags(url),
+    source: "facebook.com"
+  };
 }
 
 function decodeHtmlEntities(value: string) {
@@ -93,7 +128,7 @@ function extractReadableText(html: string) {
   );
 }
 
-async function fetchArticleContext(url: string) {
+async function fetchArticleContext(url: string): Promise<ArticleContext> {
   const normalizedUrl = normalizeUrl(url);
   const controller = new AbortController();
   const timeout = windowlessSetTimeout(() => controller.abort(), 8000);
@@ -179,7 +214,7 @@ function validateProcessedLink(value: unknown, source: string): ProcessedLink {
 }
 
 function createFallbackProcessedLink(
-  context: Awaited<ReturnType<typeof fetchArticleContext>>,
+  context: ArticleContext,
   selectedCategory: string
 ): ProcessedLink {
   return {
@@ -204,8 +239,16 @@ function parseGeminiJsonOutput(outputText: string) {
   return JSON.parse(cleanedOutput);
 }
 
+function shouldUseFallbackCard(error: unknown) {
+  return (
+    error instanceof TemporaryAiError ||
+    error instanceof SyntaxError ||
+    (error instanceof Error && error.message.toLowerCase().includes("json"))
+  );
+}
+
 async function analyzeLinkWithGemini(
-  context: Awaited<ReturnType<typeof fetchArticleContext>>,
+  context: ArticleContext,
   selectedCategory: string
 ) {
   const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
@@ -274,6 +317,11 @@ Return:
 
   if (!response.ok) {
     const errorText = await response.text();
+
+    if (response.status === 429 || response.status >= 500) {
+      throw new TemporaryAiError();
+    }
+
     throw new Error(`Gemini request failed (${response.status}): ${errorText}`);
   }
 
@@ -304,13 +352,18 @@ export async function POST(request: Request) {
     const body = await request.json();
     const url = typeof body.url === "string" ? body.url.trim() : "";
     const category =
-      typeof body.category === "string" &&
-      learningCategoryOptions.includes(body.category)
-        ? body.category
-        : learningCategoryOptions[0];
+      typeof body.category === "string" && body.category.trim()
+        ? body.category.trim().replace(/\s+/g, " ")
+        : defaultLearningCategory;
 
     if (!url) {
       return NextResponse.json({ error: "Missing link URL." }, { status: 400 });
+    }
+
+    if (isFacebookUrl(url)) {
+      return NextResponse.json({
+        card: createFacebookProcessedLink(url, category)
+      });
     }
 
     if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_API_KEY) {
@@ -322,11 +375,7 @@ export async function POST(request: Request) {
 
     const context = await fetchArticleContext(url);
     const card = await analyzeLinkWithGemini(context, category).catch((error) => {
-      if (
-        error instanceof SyntaxError ||
-        (error instanceof Error &&
-          error.message.toLowerCase().includes("json"))
-      ) {
+      if (shouldUseFallbackCard(error)) {
         return {
           ...createFallbackProcessedLink(context, category),
           imageUrl: context.imageUrl

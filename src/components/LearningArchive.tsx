@@ -10,14 +10,22 @@ import {
   getCapturedLinkDomain,
   readCapturedLinks,
   removeCapturedLinks,
+  saveCapturedLinks,
   type CapturedLink
 } from "@/lib/capturedLinks";
 import {
   readSavedLearningCards,
   removeSavedLearningCards,
+  saveSavedLearningCards,
   savedLearningCardsChangedEvent,
   savedLearningCardsStorageKey
 } from "@/lib/savedLearningCards";
+import {
+  learningCategoriesChangedEvent,
+  learningCategoriesStorageKey,
+  readLearningCategories,
+  saveLearningCategories
+} from "@/lib/learningCategories";
 import {
   hiddenStarterCardsChangedEvent,
   hiddenStarterCardsStorageKey,
@@ -43,6 +51,10 @@ function isStarterCard(card: LearningCard) {
 
 function getCapturedLinkIdFromTemporaryCard(cardId: string) {
   return cardId.replace(/^temporary-card-/, "");
+}
+
+function normalizeCategoryName(category: string) {
+  return category.trim().replace(/\s+/g, " ");
 }
 
 function createTemporaryCard(capturedLink: CapturedLink): LearningCard {
@@ -73,6 +85,11 @@ export function LearningArchive() {
   const [searchTerm, setSearchTerm] = useState("");
   const [capturedLinks, setCapturedLinks] = useState<CapturedLink[]>([]);
   const [savedCards, setSavedCards] = useState<LearningCard[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [editingCategory, setEditingCategory] = useState("");
+  const [editingCategoryName, setEditingCategoryName] = useState("");
+  const [categoryMessage, setCategoryMessage] = useState("");
   const [hiddenStarterCardIds, setHiddenStarterCardIds] = useState<string[]>(
     []
   );
@@ -93,6 +110,10 @@ export function LearningArchive() {
       setHiddenStarterCardIds(readHiddenStarterCardIds());
     }
 
+    function syncLearningCategories() {
+      setCategoryOptions(readLearningCategories());
+    }
+
     function handleCapturedLinksChanged() {
       syncCapturedLinks();
       setActiveCategory("All");
@@ -111,6 +132,12 @@ export function LearningArchive() {
       setSearchTerm("");
     }
 
+    function handleLearningCategoriesChanged() {
+      syncLearningCategories();
+      setActiveCategory("All");
+      setSearchTerm("");
+    }
+
     function handleStorage(event: StorageEvent) {
       if (event.key === capturedLinksStorageKey) {
         handleCapturedLinksChanged();
@@ -123,11 +150,16 @@ export function LearningArchive() {
       if (event.key === hiddenStarterCardsStorageKey) {
         handleHiddenStarterCardsChanged();
       }
+
+      if (event.key === learningCategoriesStorageKey) {
+        handleLearningCategoriesChanged();
+      }
     }
 
     syncCapturedLinks();
     syncSavedCards();
     syncHiddenStarterCards();
+    syncLearningCategories();
     window.addEventListener(capturedLinksChangedEvent, handleCapturedLinksChanged);
     window.addEventListener(
       savedLearningCardsChangedEvent,
@@ -136,6 +168,10 @@ export function LearningArchive() {
     window.addEventListener(
       hiddenStarterCardsChangedEvent,
       handleHiddenStarterCardsChanged
+    );
+    window.addEventListener(
+      learningCategoriesChangedEvent,
+      handleLearningCategoriesChanged
     );
     window.addEventListener("storage", handleStorage);
 
@@ -152,6 +188,10 @@ export function LearningArchive() {
         hiddenStarterCardsChangedEvent,
         handleHiddenStarterCardsChanged
       );
+      window.removeEventListener(
+        learningCategoriesChangedEvent,
+        handleLearningCategoriesChanged
+      );
       window.removeEventListener("storage", handleStorage);
     };
   }, []);
@@ -165,9 +205,12 @@ export function LearningArchive() {
   const visibleStarterCards = useMemo(
     () =>
       learningCards.filter(
-        (starterCard) => !hiddenStarterCardIds.includes(starterCard.id)
+        (starterCard) =>
+          !hiddenStarterCardIds.includes(starterCard.id) &&
+          (categoryOptions.length === 0 ||
+            categoryOptions.includes(starterCard.category))
       ),
-    [hiddenStarterCardIds]
+    [categoryOptions, hiddenStarterCardIds]
   );
 
   const allCards = useMemo(
@@ -181,10 +224,9 @@ export function LearningArchive() {
     [capturedLinks, savedCards, visibleStarterCards]
   );
 
-  const learningCategories = useMemo(
-    () => ["All", ...Array.from(new Set(allCards.map((card) => card.category)))],
-    [allCards]
-  );
+  const learningCategories = useMemo(() => ["All", ...categoryOptions], [
+    categoryOptions
+  ]);
 
   const filteredCards = useMemo(() => {
     const search = searchTerm.trim().toLowerCase();
@@ -222,6 +264,162 @@ export function LearningArchive() {
     setIsSelectingCards(false);
     setIsConfirmingDelete(false);
     setSelectedCardIds([]);
+  }
+
+  function saveCategoryChanges(
+    nextCategories: string[],
+    renamedCategory?: { from: string; to: string },
+    deletedCategory?: { category: string; fallback: string }
+  ) {
+    saveLearningCategories(nextCategories);
+
+    if (renamedCategory) {
+      saveSavedLearningCards(
+        readSavedLearningCards().map((card) =>
+          card.category === renamedCategory.from
+            ? {
+                ...card,
+                category: renamedCategory.to,
+                tags: card.tags.map((tag) =>
+                  tag === renamedCategory.from ? renamedCategory.to : tag
+                ),
+                thumbnailLabel:
+                  card.thumbnailLabel === renamedCategory.from
+                    ? renamedCategory.to
+                    : card.thumbnailLabel
+              }
+            : card
+        )
+      );
+      saveCapturedLinks(
+        readCapturedLinks().map((capturedLink) =>
+          capturedLink.category === renamedCategory.from
+            ? { ...capturedLink, category: renamedCategory.to }
+            : capturedLink
+        )
+      );
+      return;
+    }
+
+    if (deletedCategory) {
+      saveSavedLearningCards(
+        readSavedLearningCards().map((card) =>
+          card.category === deletedCategory.category
+            ? {
+                ...card,
+                category: deletedCategory.fallback,
+                tags: card.tags.map((tag) =>
+                  tag === deletedCategory.category
+                    ? deletedCategory.fallback
+                    : tag
+                ),
+                thumbnailLabel:
+                  card.thumbnailLabel === deletedCategory.category
+                    ? deletedCategory.fallback
+                    : card.thumbnailLabel
+              }
+            : card
+        )
+      );
+      saveCapturedLinks(
+        readCapturedLinks().map((capturedLink) =>
+          capturedLink.category === deletedCategory.category
+            ? { ...capturedLink, category: deletedCategory.fallback }
+            : capturedLink
+        )
+      );
+    }
+  }
+
+  function handleAddCategory() {
+    const nextCategory = normalizeCategoryName(newCategoryName);
+
+    if (!nextCategory) {
+      setCategoryMessage("Enter a category name first.");
+      return;
+    }
+
+    if (
+      categoryOptions.some(
+        (category) => category.toLowerCase() === nextCategory.toLowerCase()
+      )
+    ) {
+      setCategoryMessage("That category already exists.");
+      return;
+    }
+
+    saveLearningCategories([...categoryOptions, nextCategory]);
+    setNewCategoryName("");
+    setCategoryMessage(`Added ${nextCategory}.`);
+  }
+
+  function startRenamingCategory(category: string) {
+    setEditingCategory(category);
+    setEditingCategoryName(category);
+    setCategoryMessage("");
+  }
+
+  function cancelRenamingCategory() {
+    setEditingCategory("");
+    setEditingCategoryName("");
+  }
+
+  function handleRenameCategory() {
+    const nextCategory = normalizeCategoryName(editingCategoryName);
+
+    if (!editingCategory) {
+      return;
+    }
+
+    if (!nextCategory) {
+      setCategoryMessage("Enter a category name first.");
+      return;
+    }
+
+    if (
+      categoryOptions.some(
+        (category) =>
+          category !== editingCategory &&
+          category.toLowerCase() === nextCategory.toLowerCase()
+      )
+    ) {
+      setCategoryMessage("That category already exists.");
+      return;
+    }
+
+    const nextCategories = categoryOptions.map((category) =>
+      category === editingCategory ? nextCategory : category
+    );
+
+    saveCategoryChanges(nextCategories, {
+      from: editingCategory,
+      to: nextCategory
+    });
+    setCategoryMessage(`Renamed ${editingCategory} to ${nextCategory}.`);
+    cancelRenamingCategory();
+  }
+
+  function handleDeleteCategory(category: string) {
+    if (categoryOptions.length <= 1) {
+      setCategoryMessage("Keep at least one category.");
+      return;
+    }
+
+    const nextCategories = categoryOptions.filter(
+      (currentCategory) => currentCategory !== category
+    );
+    const fallbackCategory = nextCategories[0];
+
+    saveCategoryChanges(nextCategories, undefined, {
+      category,
+      fallback: fallbackCategory
+    });
+    setCategoryMessage(
+      `Deleted ${category}. Existing cards moved to ${fallbackCategory}.`
+    );
+    if (editingCategory === category) {
+      cancelRenamingCategory();
+    }
   }
 
   function deleteSelectedCards() {
@@ -389,6 +587,112 @@ export function LearningArchive() {
                 </p>
               </>
             )}
+          </div>
+
+          <div className="border border-ink/10 bg-white/45 p-4 sm:min-w-[22rem]">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-serif text-2xl text-ink">Categories</h2>
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-sage">
+                Manage
+              </span>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <label className="min-w-0 flex-1">
+                <span className="sr-only">New category</span>
+                <input
+                  className="h-11 w-full border border-ink/15 bg-paper/80 px-3 text-sm font-semibold outline-none transition placeholder:text-ink/35 focus:border-sage"
+                  onChange={(event) => setNewCategoryName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      handleAddCategory();
+                    }
+                  }}
+                  placeholder="New category"
+                  type="text"
+                  value={newCategoryName}
+                />
+              </label>
+              <button
+                className="h-11 border border-ink bg-ink px-4 text-xs font-bold uppercase tracking-[0.14em] text-paper transition hover:border-sage hover:bg-sage"
+                onClick={handleAddCategory}
+                type="button"
+              >
+                Add
+              </button>
+            </div>
+            {categoryMessage ? (
+              <p className="mt-3 text-sm font-semibold text-ink/55">
+                {categoryMessage}
+              </p>
+            ) : null}
+            <ul className="mt-4 space-y-2">
+              {categoryOptions.map((category) => (
+                <li
+                  className="flex min-w-0 flex-col gap-2 border border-ink/10 bg-paper/65 p-2 sm:flex-row sm:items-center"
+                  key={category}
+                >
+                  {editingCategory === category ? (
+                    <>
+                      <input
+                        className="h-10 min-w-0 flex-1 border border-ink/15 bg-white/70 px-3 text-sm font-semibold outline-none transition focus:border-sage"
+                        onChange={(event) =>
+                          setEditingCategoryName(event.target.value)
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            handleRenameCategory();
+                          }
+
+                          if (event.key === "Escape") {
+                            cancelRenamingCategory();
+                          }
+                        }}
+                        type="text"
+                        value={editingCategoryName}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          className="h-10 border border-sage bg-sage px-3 text-xs font-bold uppercase tracking-[0.12em] text-paper"
+                          onClick={handleRenameCategory}
+                          type="button"
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="h-10 border border-ink/15 bg-white/55 px-3 text-xs font-bold uppercase tracking-[0.12em] text-ink/60"
+                          onClick={cancelRenamingCategory}
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="min-w-0 flex-1 truncate px-1 text-sm font-bold text-ink">
+                        {category}
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          className="h-10 border border-ink/15 bg-white/55 px-3 text-xs font-bold uppercase tracking-[0.12em] text-ink/60 transition hover:border-sage hover:text-sage"
+                          onClick={() => startRenamingCategory(category)}
+                          type="button"
+                        >
+                          Rename
+                        </button>
+                        <button
+                          className="h-10 border border-clay/30 bg-white/55 px-3 text-xs font-bold uppercase tracking-[0.12em] text-clay transition hover:border-clay hover:bg-clay hover:text-paper"
+                          onClick={() => handleDeleteCategory(category)}
+                          type="button"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
