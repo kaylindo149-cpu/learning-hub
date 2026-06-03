@@ -672,7 +672,7 @@ export function LearningArchive() {
       ) : null}
 
       <section
-        className="relative h-[38vh] min-h-[280px] max-h-[390px] overflow-hidden bg-cover bg-center"
+        className="relative h-[48vh] min-h-[360px] max-h-[560px] overflow-hidden bg-cover bg-center"
         style={{
           backgroundImage: "url('/images/learning-hub-meadow-hero.png')"
         }}
@@ -686,72 +686,63 @@ export function LearningArchive() {
           >
             <KaylinLogo />
           </a>
-          <h1 className="display-bubble mt-auto max-w-[94vw] whitespace-nowrap text-[clamp(1.95rem,5.6vw,4.85rem)] leading-none text-white drop-shadow-[0_4px_18px_rgba(42,31,41,0.35)]">
-            Kaylin&apos;s Learning Hub
-          </h1>
-          <div
-            aria-hidden="true"
-            className="mb-5 mt-2 w-[min(72vw,350px)] text-white drop-shadow-[0_2px_10px_rgba(42,31,41,0.28)] sm:mb-6 sm:mt-3 sm:w-[min(42vw,430px)]"
-          >
-            <svg
-              fill="none"
-              viewBox="0 0 560 180"
-              xmlns="http://www.w3.org/2000/svg"
+          <div className="mb-[clamp(2rem,5.5vh,4.25rem)] mt-auto flex flex-col items-center">
+            <h1 className="display-bubble max-w-[94vw] whitespace-nowrap text-[clamp(1.8rem,4.45vw,4.15rem)] leading-none text-white drop-shadow-[0_4px_18px_rgba(42,31,41,0.35)]">
+              Kaylin&apos;s Learning Hub
+            </h1>
+            <div
+              aria-hidden="true"
+              className="mt-5 w-[min(78vw,390px)] text-white drop-shadow-[0_2px_10px_rgba(42,31,41,0.28)] sm:mt-6 sm:w-[min(42vw,450px)]"
             >
-              <filter id="cloud-pencil-texture">
-                <feTurbulence
-                  baseFrequency="0.055"
-                  numOctaves="4"
-                  result="texture"
-                  seed="11"
-                  type="fractalNoise"
-                />
-                <feDisplacementMap
-                  in="SourceGraphic"
-                  in2="texture"
-                  scale="4.4"
-                  xChannelSelector="R"
-                  yChannelSelector="G"
-                />
-              </filter>
-              <path
-                d="M94 126c-36-2-65-19-65-45 0-27 34-47 74-41 12-30 51-47 92-31 20-26 64-29 99-9 18-20 54-23 83-7 22 12 33 31 33 48 36-6 70 13 75 42 5 31-25 57-67 58-20 34-80 42-126 17-45 33-110 25-137-11-23 10-42 11-61 3Z"
-                filter="url(#cloud-pencil-texture)"
-                opacity="0.38"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="3"
-              />
-              <path
-                d="M90 122c-36-2-65-19-65-45 0-27 34-47 74-41 12-30 51-47 92-31 20-26 64-29 99-9 18-20 54-23 83-7 22 12 33 31 33 48 36-6 70 13 75 42 5 31-25 57-67 58-20 34-80 42-126 17-45 33-110 25-137-11-23 10-42 11-61 3Z"
-                filter="url(#cloud-pencil-texture)"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="5"
-              />
-              <path
-                d="M93 125c34 11 63 4 78-16 24 30 80 38 122 11 31 22 77 20 101-5"
-                filter="url(#cloud-pencil-texture)"
-                opacity="0.5"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeWidth="2.4"
-              />
-              <text
-                fill="currentColor"
-                fontFamily="Inter, Arial, sans-serif"
-                fontSize="26"
-                fontWeight="600"
-                opacity="0.46"
-                textAnchor="middle"
-                x="278"
-                y="93"
+              <svg
+                fill="none"
+                viewBox="0 0 560 180"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                paste your links here
-              </text>
-            </svg>
+                <path
+                  d="M82 116c-31-2-57-18-57-42 0-25 31-44 67-39 12-28 47-42 83-30 20-25 59-27 89-8 18-18 51-19 76-4 19 12 28 29 27 45 33-5 64 13 68 39 4 29-24 53-62 53-18 29-72 35-113 13-41 28-99 22-124-8-20 8-38 9-54-1Z"
+                  opacity="0.28"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2.2"
+                  transform="translate(3 -2)"
+                />
+                <path
+                  d="M80 118c-31-2-57-18-57-42 0-25 31-44 67-39 12-28 47-42 83-30 20-25 59-27 89-8 18-18 51-19 76-4 19 12 28 29 27 45 33-5 64 13 68 39 4 29-24 53-62 53-18 29-72 35-113 13-41 28-99 22-124-8-20 8-38 9-54-1Z"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="4.4"
+                />
+                <path
+                  d="M82 121c29 10 55 5 70-10 22 24 73 30 110 8 30 19 69 18 93-4"
+                  opacity="0.42"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeWidth="1.8"
+                />
+                <path
+                  d="M79 113c-18-5-30-15-31-30M118 39c14-17 38-24 62-17M281 23c19-9 43-7 62 3"
+                  opacity="0.24"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeWidth="1.6"
+                />
+                <text
+                  fill="currentColor"
+                  fontFamily="Inter, Arial, sans-serif"
+                  fontSize="25"
+                  fontWeight="600"
+                  opacity="0.46"
+                  textAnchor="middle"
+                  x="278"
+                  y="91"
+                >
+                  paste your links here
+                </text>
+              </svg>
+            </div>
           </div>
         </div>
       </section>
