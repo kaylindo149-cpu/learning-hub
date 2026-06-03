@@ -1,4 +1,5 @@
 import type { LearningCard } from "@/data/learningCards";
+import { queueArchiveStatePatch } from "@/lib/archiveStateApi";
 import {
   facebookSavedLinkSummary,
   getFacebookLinkTitle,
@@ -115,6 +116,7 @@ export function saveSavedLearningCards(cards: LearningCard[]) {
   }
 
   notifySavedLearningCardsChanged();
+  queueArchiveStatePatch({ savedCards: cards });
 }
 
 export function upsertSavedLearningCard(card: LearningCard) {

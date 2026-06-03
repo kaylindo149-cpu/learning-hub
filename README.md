@@ -7,7 +7,7 @@ A beginner-friendly personal learning hub built with Next.js, TypeScript, and Ta
 - Shows a soft editorial homepage for saved learning links.
 - Includes starter knowledge cards with thumbnails, categories, summaries, sources, and dates.
 - Includes simple search and category filters.
-- Captures links, sends them through a Gemini-powered processor, and saves generated cards locally in the browser.
+- Captures links, sends them through a Gemini-powered processor, and saves generated cards to shared storage, with browser storage as a fallback/migration source.
 
 ## AI setup
 
@@ -51,7 +51,7 @@ category: Learning Science https://example.com/article
 
 If you do not include a tag/category, the link is saved with an empty category and no tag. The Slack tag should match a tag you created in **manage tags** so it appears in the app filters.
 
-On Vercel, use Upstash Redis or Vercel KV for the Slack queue:
+On Vercel, use Upstash Redis or Vercel KV for the shared archive state and Slack queue:
 
 ```bash
 UPSTASH_REDIS_REST_URL=your-upstash-rest-url
@@ -80,7 +80,7 @@ UPSTASH_REDIS_REST_URL=your-upstash-rest-url
 UPSTASH_REDIS_REST_TOKEN=your-upstash-rest-token
 ```
 
-Only `GEMINI_API_KEY` is required for normal link summarizing. Slack variables are needed only if you use Slack capture.
+`GEMINI_API_KEY` is required for normal link summarizing. `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are required on Vercel if you want saved history, hidden starter cards, tags, and captured links to be the same in normal and incognito/private browser sessions. Slack variables are needed only if you use Slack capture.
 
 4. Deploy. If the project is connected to GitHub, every push to `main` will trigger a Vercel production deployment.
 

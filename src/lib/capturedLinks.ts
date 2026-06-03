@@ -1,3 +1,5 @@
+import { queueArchiveStatePatch } from "@/lib/archiveStateApi";
+
 export const capturedLinksStorageKey = "kaylins-learning-hub-captured-links";
 export const capturedLinksChangedEvent =
   "kaylins-learning-hub-captured-links-changed";
@@ -81,6 +83,7 @@ export function saveCapturedLinks(capturedLinks: CapturedLink[]) {
   }
 
   notifyCapturedLinksChanged();
+  queueArchiveStatePatch({ capturedLinks });
 }
 
 export function clearCapturedLinks() {
@@ -96,6 +99,7 @@ export function clearCapturedLinks() {
 
   capturedLinksFallback = [];
   notifyCapturedLinksChanged();
+  queueArchiveStatePatch({ capturedLinks: [] });
 }
 
 export function updateCapturedLinkStatus(

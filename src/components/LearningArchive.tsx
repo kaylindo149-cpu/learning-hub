@@ -32,6 +32,7 @@ import {
   hideStarterCards,
   readHiddenStarterCardIds
 } from "@/lib/hiddenStarterCards";
+import { syncBrowserArchiveStateWithServer } from "@/lib/browserArchiveState";
 
 function isTemporaryCard(card: LearningCard) {
   return card.id.startsWith("temporary-card-");
@@ -215,6 +216,10 @@ export function LearningArchive() {
   const [isSelectingCards, setIsSelectingCards] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    void syncBrowserArchiveStateWithServer();
+  }, []);
 
   useEffect(() => {
     function syncCapturedLinks() {

@@ -1,3 +1,5 @@
+import { queueArchiveStatePatch } from "@/lib/archiveStateApi";
+
 export const hiddenStarterCardsStorageKey =
   "kaylins-learning-hub-hidden-starter-cards";
 export const hiddenStarterCardsChangedEvent =
@@ -36,9 +38,15 @@ export function hideStarterCards(ids: string[]) {
     return;
   }
 
-  hiddenStarterCardIdsFallback = Array.from(
-    new Set([...readHiddenStarterCardIds(), ...ids])
-  );
+  saveHiddenStarterCardIds([...readHiddenStarterCardIds(), ...ids]);
+}
+
+export function saveHiddenStarterCardIds(ids: string[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  hiddenStarterCardIdsFallback = Array.from(new Set(ids));
 
   try {
     window.localStorage.setItem(
@@ -50,4 +58,5 @@ export function hideStarterCards(ids: string[]) {
   }
 
   notifyHiddenStarterCardsChanged();
+  queueArchiveStatePatch({ hiddenStarterCardIds: hiddenStarterCardIdsFallback });
 }

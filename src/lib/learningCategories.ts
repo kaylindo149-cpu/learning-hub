@@ -1,3 +1,5 @@
+import { queueArchiveStatePatch } from "@/lib/archiveStateApi";
+
 export const defaultLearningCategory = "Learn Later";
 export const learningCategoriesStorageKey =
   "kaylins-learning-hub-learning-categories";
@@ -75,4 +77,5 @@ export function saveLearningCategories(categories: string[]) {
   }
 
   notifyLearningCategoriesChanged();
+  queueArchiveStatePatch({ categories: learningCategoriesFallback });
 }
