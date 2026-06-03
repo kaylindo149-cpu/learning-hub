@@ -672,49 +672,67 @@ export function LearningArchive() {
         />
       ) : null}
 
-      <header className="relative mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-8 sm:px-8 lg:px-10">
-        <button
-          aria-label="Open navigation"
-          className="flex h-10 w-10 items-center justify-center text-sage"
-          type="button"
-        >
-          <span className="flex flex-col gap-1.5">
-            <span className="h-0.5 w-6 bg-current" />
-            <span className="h-0.5 w-6 bg-current" />
-            <span className="h-0.5 w-6 bg-current" />
-          </span>
-        </button>
-
-        <a
-          className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
-          href="/"
-          aria-label="Kaylin's Learning Hub"
-        >
-          <KaylinLogo />
-        </a>
-
-        <nav
-          aria-label="Archive sections"
-          className="hidden items-center gap-5 text-xs font-bold uppercase tracking-[0.2em] text-sage sm:flex"
-        >
-          <a href="#archive">Archive</a>
-          <a href="#filters">Search</a>
-        </nav>
-      </header>
-
-      <section className="mx-auto w-full max-w-7xl px-5 pb-12 pt-6 sm:px-8 lg:px-10">
-        <div className="border-y border-ink/10 py-10 sm:py-12">
-          <div className="w-full">
-            <p className="text-xs font-bold uppercase tracking-[0.32em] text-sage">
-              Curated learning archive
-            </p>
-            <h1 className="display-bubble mt-5 whitespace-nowrap text-[clamp(2.25rem,6.7vw,6.9rem)] leading-none text-ink">
-              Kaylin&apos;s Learning Hub
-            </h1>
+      <section
+        className="relative min-h-[390px] overflow-hidden bg-cover bg-center sm:min-h-[430px] lg:min-h-[520px]"
+        style={{
+          backgroundImage: "url('/images/learning-hub-meadow-hero.png')"
+        }}
+      >
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0)_38%,rgba(42,31,41,0.24)_100%)]" />
+        <div className="relative z-[1] flex min-h-[390px] flex-col items-center px-5 pt-7 text-center sm:min-h-[430px] sm:pt-9 lg:min-h-[520px] lg:pt-10">
+          <a
+            className="flex h-16 w-16 items-center justify-center sm:h-20 sm:w-20 [&_svg]:h-full [&_svg]:w-full"
+            href="/"
+            aria-label="Kaylin's Learning Hub"
+          >
+            <KaylinLogo />
+          </a>
+          <h1 className="display-bubble mt-16 max-w-[min(92vw,1120px)] text-[clamp(2.85rem,8.4vw,8.4rem)] leading-none text-white drop-shadow-[0_4px_18px_rgba(42,31,41,0.35)] sm:mt-24 lg:mt-28">
+            Kaylin&apos;s Learning Hub
+          </h1>
+          <div
+            aria-hidden="true"
+            className="mt-5 w-[min(72vw,360px)] text-white drop-shadow-[0_2px_10px_rgba(42,31,41,0.28)] sm:mt-8 sm:w-[min(45vw,430px)]"
+          >
+            <svg
+              fill="none"
+              viewBox="0 0 520 160"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <filter id="cloud-pencil-texture">
+                <feTurbulence
+                  baseFrequency="0.035"
+                  numOctaves="3"
+                  result="texture"
+                  seed="11"
+                  type="fractalNoise"
+                />
+                <feDisplacementMap
+                  in="SourceGraphic"
+                  in2="texture"
+                  scale="3.2"
+                  xChannelSelector="R"
+                  yChannelSelector="G"
+                />
+              </filter>
+              <path
+                d="M84 105c-30-1-54-15-54-36 0-22 28-39 61-34 10-24 42-37 76-25 16-21 53-24 81-7 15-16 45-19 69-6 18 10 27 25 27 39 30-5 58 11 62 34 4 25-21 47-56 48-16 28-66 34-104 14-37 27-91 21-113-9-19 8-35 9-49 2Z"
+                filter="url(#cloud-pencil-texture)"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="7"
+              />
+              <path
+                d="M86 107c28 9 52 3 65-13 20 25 66 32 101 9 26 18 64 17 84-4"
+                filter="url(#cloud-pencil-texture)"
+                opacity="0.72"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeWidth="3.5"
+              />
+            </svg>
           </div>
-          <p className="mt-8 max-w-3xl text-lg font-semibold leading-8 text-ink/68">
-            A visual archive of links, notes, and ideas worth revisiting.
-          </p>
         </div>
       </section>
 
