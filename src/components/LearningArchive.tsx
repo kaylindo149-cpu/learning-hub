@@ -378,6 +378,15 @@ export function LearningArchive() {
 
   const selectedCardsCount = selectedCardIds.length;
   const hasDeletableCards = filteredCards.some(isDeletableCard);
+  const filteredDeletableCardIds = useMemo(
+    () => filteredCards.filter(isDeletableCard).map((card) => card.id),
+    [filteredCards]
+  );
+  const areAllFilteredDeletableCardsSelected =
+    filteredDeletableCardIds.length > 0 &&
+    filteredDeletableCardIds.every((cardId) =>
+      selectedCardIds.includes(cardId)
+    );
 
   function toggleSelectedCard(cardId: string) {
     setSelectedCardIds((currentIds) =>
@@ -391,6 +400,26 @@ export function LearningArchive() {
     setIsSelectingCards(false);
     setIsConfirmingDelete(false);
     setSelectedCardIds([]);
+  }
+
+  function toggleAllFilteredCards() {
+    const filteredDeletableCardIdsSet = new Set(filteredDeletableCardIds);
+
+    setSelectedCardIds((currentIds) => {
+      const hasSelectedAllFilteredCards =
+        filteredDeletableCardIds.length > 0 &&
+        filteredDeletableCardIds.every((cardId) =>
+          currentIds.includes(cardId)
+        );
+
+      if (hasSelectedAllFilteredCards) {
+        return currentIds.filter(
+          (cardId) => !filteredDeletableCardIdsSet.has(cardId)
+        );
+      }
+
+      return Array.from(new Set([...currentIds, ...filteredDeletableCardIds]));
+    });
   }
 
   function saveCategoryChanges(
@@ -755,6 +784,16 @@ export function LearningArchive() {
           <div className="flex flex-wrap gap-2 sm:justify-end">
             {isSelectingCards ? (
               <>
+                <button
+                  className="border border-ink/15 bg-white/55 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-ink/70 transition hover:border-sage hover:text-sage disabled:cursor-not-allowed disabled:text-ink/30"
+                  disabled={filteredDeletableCardIds.length === 0}
+                  onClick={toggleAllFilteredCards}
+                  type="button"
+                >
+                  {areAllFilteredDeletableCardsSelected
+                    ? "Deselect all"
+                    : "Select all"}
+                </button>
                 <button
                   className="border border-clay bg-clay px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-paper transition disabled:cursor-not-allowed disabled:border-ink/15 disabled:bg-ink/10 disabled:text-ink/35"
                   disabled={selectedCardsCount === 0}
