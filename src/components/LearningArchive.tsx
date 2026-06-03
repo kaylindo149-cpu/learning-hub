@@ -672,12 +672,12 @@ export function LearningArchive() {
       ) : null}
 
       <section
-        className="relative h-[48vh] min-h-[360px] max-h-[560px] overflow-hidden bg-cover bg-center"
+        className="relative h-[48vh] min-h-[360px] max-h-[560px] overflow-hidden bg-cover bg-[position:center_bottom] saturate-[1.2] contrast-[1.04]"
         style={{
           backgroundImage: "url('/images/learning-hub-meadow-hero.png')"
         }}
       >
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0)_38%,rgba(42,31,41,0.24)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.05)_0%,rgba(255,255,255,0)_34%,rgba(21,54,23,0.1)_100%)]" />
         <div className="relative z-[1] flex h-full flex-col items-center px-5 pt-5 text-center sm:pt-6">
           <a
             className="flex h-12 w-12 items-center justify-center sm:h-14 sm:w-14 [&_svg]:h-full [&_svg]:w-full"
@@ -686,58 +686,36 @@ export function LearningArchive() {
           >
             <KaylinLogo />
           </a>
-          <div className="mb-[clamp(2rem,5.5vh,4.25rem)] mt-auto flex flex-col items-center">
-            <h1 className="display-bubble max-w-[94vw] whitespace-nowrap text-[clamp(1.8rem,4.45vw,4.15rem)] leading-none text-white drop-shadow-[0_4px_18px_rgba(42,31,41,0.35)]">
+          <div className="mb-[clamp(2.1rem,5.8vh,4.5rem)] mt-auto flex flex-col items-center">
+            <h1 className="display-bubble max-w-[94vw] whitespace-nowrap text-[clamp(1.65rem,3.75vw,3.65rem)] leading-none text-white drop-shadow-[0_4px_18px_rgba(42,31,41,0.34)]">
               Kaylin&apos;s Learning Hub
             </h1>
             <div
               aria-hidden="true"
-              className="mt-5 w-[min(78vw,390px)] text-white drop-shadow-[0_2px_10px_rgba(42,31,41,0.28)] sm:mt-6 sm:w-[min(42vw,450px)]"
+              className="mt-4 w-[min(68vw,280px)] text-white drop-shadow-[0_2px_8px_rgba(42,31,41,0.26)] sm:mt-5 sm:w-[min(28vw,320px)]"
             >
               <svg
                 fill="none"
-                viewBox="0 0 560 180"
+                viewBox="0 0 420 160"
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  d="M82 116c-31-2-57-18-57-42 0-25 31-44 67-39 12-28 47-42 83-30 20-25 59-27 89-8 18-18 51-19 76-4 19 12 28 29 27 45 33-5 64 13 68 39 4 29-24 53-62 53-18 29-72 35-113 13-41 28-99 22-124-8-20 8-38 9-54-1Z"
-                  opacity="0.28"
+                  d="M76 105c-26 0-49-14-49-34 0-19 23-34 51-32 8-22 36-34 64-24 16-18 48-21 72-6 16-13 41-11 59 3 17 13 23 31 16 48 28-1 52 15 54 36 2 23-24 39-54 34-17 21-53 25-82 10-28 19-70 16-92-4-15 7-36 5-49-7-10-8-14-17-11-26 6 2 13 3 21 2Z"
                   stroke="currentColor"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth="2.2"
-                  transform="translate(3 -2)"
-                />
-                <path
-                  d="M80 118c-31-2-57-18-57-42 0-25 31-44 67-39 12-28 47-42 83-30 20-25 59-27 89-8 18-18 51-19 76-4 19 12 28 29 27 45 33-5 64 13 68 39 4 29-24 53-62 53-18 29-72 35-113 13-41 28-99 22-124-8-20 8-38 9-54-1Z"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="4.4"
-                />
-                <path
-                  d="M82 121c29 10 55 5 70-10 22 24 73 30 110 8 30 19 69 18 93-4"
-                  opacity="0.42"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeWidth="1.8"
-                />
-                <path
-                  d="M79 113c-18-5-30-15-31-30M118 39c14-17 38-24 62-17M281 23c19-9 43-7 62 3"
-                  opacity="0.24"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeWidth="1.6"
+                  strokeWidth="4.2"
+                  vectorEffect="non-scaling-stroke"
                 />
                 <text
                   fill="currentColor"
                   fontFamily="Inter, Arial, sans-serif"
-                  fontSize="25"
+                  fontSize="19"
                   fontWeight="600"
-                  opacity="0.46"
+                  opacity="0.5"
                   textAnchor="middle"
-                  x="278"
-                  y="91"
+                  x="208"
+                  y="83"
                 >
                   paste your links here
                 </text>
