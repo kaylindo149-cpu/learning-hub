@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { KaylinLogo } from "@/components/KaylinLogo";
-import LinkInbox from "./LinkInbox";
 import { learningCards, type LearningCard } from "@/data/learningCards";
 import {
   capturedLinksChangedEvent,
@@ -735,8 +734,6 @@ export function LearningArchive() {
           </div>
         </div>
       </section>
-
-      <LinkInbox />
 
       <section
         id="filters"
