@@ -672,7 +672,7 @@ export function LearningArchive() {
       ) : null}
 
       <section
-        className="relative h-[33vh] min-h-[250px] max-h-[340px] overflow-hidden bg-cover bg-center"
+        className="relative h-[38vh] min-h-[280px] max-h-[390px] overflow-hidden bg-cover bg-center"
         style={{
           backgroundImage: "url('/images/learning-hub-meadow-hero.png')"
         }}
@@ -686,22 +686,22 @@ export function LearningArchive() {
           >
             <KaylinLogo />
           </a>
-          <h1 className="display-bubble mt-auto max-w-[94vw] whitespace-nowrap text-[clamp(2.15rem,6.4vw,5.6rem)] leading-none text-white drop-shadow-[0_4px_18px_rgba(42,31,41,0.35)]">
+          <h1 className="display-bubble mt-auto max-w-[94vw] whitespace-nowrap text-[clamp(1.95rem,5.6vw,4.85rem)] leading-none text-white drop-shadow-[0_4px_18px_rgba(42,31,41,0.35)]">
             Kaylin&apos;s Learning Hub
           </h1>
           <div
             aria-hidden="true"
-            className="mb-5 mt-2 w-[min(44vw,230px)] text-white drop-shadow-[0_2px_10px_rgba(42,31,41,0.28)] sm:mb-6 sm:mt-3 sm:w-[min(30vw,270px)]"
+            className="mb-5 mt-2 w-[min(72vw,350px)] text-white drop-shadow-[0_2px_10px_rgba(42,31,41,0.28)] sm:mb-6 sm:mt-3 sm:w-[min(42vw,430px)]"
           >
             <svg
               fill="none"
-              viewBox="0 0 520 160"
+              viewBox="0 0 560 180"
               xmlns="http://www.w3.org/2000/svg"
             >
               <filter id="cloud-pencil-texture">
                 <feTurbulence
-                  baseFrequency="0.035"
-                  numOctaves="3"
+                  baseFrequency="0.055"
+                  numOctaves="4"
                   result="texture"
                   seed="11"
                   type="fractalNoise"
@@ -709,27 +709,48 @@ export function LearningArchive() {
                 <feDisplacementMap
                   in="SourceGraphic"
                   in2="texture"
-                  scale="3.2"
+                  scale="4.4"
                   xChannelSelector="R"
                   yChannelSelector="G"
                 />
               </filter>
               <path
-                d="M84 105c-30-1-54-15-54-36 0-22 28-39 61-34 10-24 42-37 76-25 16-21 53-24 81-7 15-16 45-19 69-6 18 10 27 25 27 39 30-5 58 11 62 34 4 25-21 47-56 48-16 28-66 34-104 14-37 27-91 21-113-9-19 8-35 9-49 2Z"
+                d="M94 126c-36-2-65-19-65-45 0-27 34-47 74-41 12-30 51-47 92-31 20-26 64-29 99-9 18-20 54-23 83-7 22 12 33 31 33 48 36-6 70 13 75 42 5 31-25 57-67 58-20 34-80 42-126 17-45 33-110 25-137-11-23 10-42 11-61 3Z"
+                filter="url(#cloud-pencil-texture)"
+                opacity="0.38"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="3"
+              />
+              <path
+                d="M90 122c-36-2-65-19-65-45 0-27 34-47 74-41 12-30 51-47 92-31 20-26 64-29 99-9 18-20 54-23 83-7 22 12 33 31 33 48 36-6 70 13 75 42 5 31-25 57-67 58-20 34-80 42-126 17-45 33-110 25-137-11-23 10-42 11-61 3Z"
                 filter="url(#cloud-pencil-texture)"
                 stroke="currentColor"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth="7"
+                strokeWidth="5"
               />
               <path
-                d="M86 107c28 9 52 3 65-13 20 25 66 32 101 9 26 18 64 17 84-4"
+                d="M93 125c34 11 63 4 78-16 24 30 80 38 122 11 31 22 77 20 101-5"
                 filter="url(#cloud-pencil-texture)"
-                opacity="0.72"
+                opacity="0.5"
                 stroke="currentColor"
                 strokeLinecap="round"
-                strokeWidth="3.5"
+                strokeWidth="2.4"
               />
+              <text
+                fill="currentColor"
+                fontFamily="Inter, Arial, sans-serif"
+                fontSize="26"
+                fontWeight="600"
+                opacity="0.46"
+                textAnchor="middle"
+                x="278"
+                y="93"
+              >
+                paste your links here
+              </text>
             </svg>
           </div>
         </div>
