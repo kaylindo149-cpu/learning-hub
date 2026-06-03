@@ -672,26 +672,26 @@ export function LearningArchive() {
       ) : null}
 
       <section
-        className="relative min-h-[390px] overflow-hidden bg-cover bg-center sm:min-h-[430px] lg:min-h-[520px]"
+        className="relative h-[33vh] min-h-[250px] max-h-[340px] overflow-hidden bg-cover bg-center"
         style={{
           backgroundImage: "url('/images/learning-hub-meadow-hero.png')"
         }}
       >
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0)_38%,rgba(42,31,41,0.24)_100%)]" />
-        <div className="relative z-[1] flex min-h-[390px] flex-col items-center px-5 pt-7 text-center sm:min-h-[430px] sm:pt-9 lg:min-h-[520px] lg:pt-10">
+        <div className="relative z-[1] flex h-full flex-col items-center px-5 pt-5 text-center sm:pt-6">
           <a
-            className="flex h-16 w-16 items-center justify-center sm:h-20 sm:w-20 [&_svg]:h-full [&_svg]:w-full"
+            className="flex h-12 w-12 items-center justify-center sm:h-14 sm:w-14 [&_svg]:h-full [&_svg]:w-full"
             href="/"
             aria-label="Kaylin's Learning Hub"
           >
             <KaylinLogo />
           </a>
-          <h1 className="display-bubble mt-16 max-w-[min(92vw,1120px)] text-[clamp(2.85rem,8.4vw,8.4rem)] leading-none text-white drop-shadow-[0_4px_18px_rgba(42,31,41,0.35)] sm:mt-24 lg:mt-28">
+          <h1 className="display-bubble mt-auto max-w-[94vw] whitespace-nowrap text-[clamp(2.15rem,6.4vw,5.6rem)] leading-none text-white drop-shadow-[0_4px_18px_rgba(42,31,41,0.35)]">
             Kaylin&apos;s Learning Hub
           </h1>
           <div
             aria-hidden="true"
-            className="mt-5 w-[min(72vw,360px)] text-white drop-shadow-[0_2px_10px_rgba(42,31,41,0.28)] sm:mt-8 sm:w-[min(45vw,430px)]"
+            className="mb-5 mt-2 w-[min(44vw,230px)] text-white drop-shadow-[0_2px_10px_rgba(42,31,41,0.28)] sm:mb-6 sm:mt-3 sm:w-[min(30vw,270px)]"
           >
             <svg
               fill="none"
