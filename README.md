@@ -21,6 +21,22 @@ GEMINI_API_KEY=your-gemini-api-key-here
 
 The app can capture links from a Slack channel through Slack Events.
 
+## Password protection
+
+To require a password before someone can open Learning Hub, add this environment variable in Vercel:
+
+```bash
+LEARNING_HUB_PASSWORD=your-password
+```
+
+Optional but recommended:
+
+```bash
+LEARNING_HUB_AUTH_SECRET=any-long-random-text
+```
+
+After saving the variables, redeploy the site. The Slack event URL stays open so Slack can still send links into the hub.
+
 1. Create or open your Slack app at `api.slack.com/apps`.
 2. Add `SLACK_SIGNING_SECRET` to `.env.local` from **Basic Information → App Credentials → Signing Secret**.
 3. Add the bot event subscription `message.channels`. Slack requires the `channels:history` scope for public channel messages.
