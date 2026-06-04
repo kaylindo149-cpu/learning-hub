@@ -31,6 +31,7 @@ import {
   hideStarterCards,
   readHiddenStarterCardIds
 } from "@/lib/hiddenStarterCards";
+import { processCapturedLinkWithAi } from "@/lib/aiProcessor";
 import { syncBrowserArchiveStateWithServer } from "@/lib/browserArchiveState";
 
 function isTemporaryCard(card: LearningCard) {
@@ -200,6 +201,8 @@ function createTemporaryCard(capturedLink: CapturedLink): LearningCard {
 export function LearningArchive() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [heroLink, setHeroLink] = useState("");
+  const [heroLinkMessage, setHeroLinkMessage] = useState("");
   const [capturedLinks, setCapturedLinks] = useState<CapturedLink[]>([]);
   const [savedCards, setSavedCards] = useState<LearningCard[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
@@ -660,6 +663,28 @@ export function LearningArchive() {
     stopSelectingCards();
   }
 
+  function captureHeroLink() {
+    const trimmedLink = heroLink.trim();
+
+    if (!trimmedLink) {
+      setHeroLinkMessage("Paste a link first.");
+      return;
+    }
+
+    const capturedLink: CapturedLink = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      url: trimmedLink,
+      category: categoryOptions[0] ?? "Learn Later",
+      status: "Pending",
+      capturedAt: new Date().toISOString()
+    };
+
+    saveCapturedLinks([capturedLink, ...readCapturedLinks()]);
+    void processCapturedLinkWithAi(capturedLink);
+    setHeroLink("");
+    setHeroLinkMessage("Captured.");
+  }
+
   return (
     <main className="min-h-screen bg-paper text-ink">
       {activeCardCategoryMenuId ? (
@@ -690,36 +715,39 @@ export function LearningArchive() {
             <h1 className="display-bubble max-w-[94vw] whitespace-nowrap text-[clamp(1.65rem,3.75vw,3.65rem)] leading-none text-white drop-shadow-[0_4px_18px_rgba(42,31,41,0.34)]">
               Kaylin&apos;s Learning Hub
             </h1>
-            <div
-              aria-hidden="true"
-              className="mt-4 w-[min(68vw,280px)] text-white drop-shadow-[0_2px_8px_rgba(42,31,41,0.26)] sm:mt-5 sm:w-[min(28vw,320px)]"
-            >
-              <svg
-                fill="none"
-                viewBox="0 0 420 160"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M76 105c-26 0-49-14-49-34 0-19 23-34 51-32 8-22 36-34 64-24 16-18 48-21 72-6 16-13 41-11 59 3 17 13 23 31 16 48 28-1 52 15 54 36 2 23-24 39-54 34-17 21-53 25-82 10-28 19-70 16-92-4-15 7-36 5-49-7-10-8-14-17-11-26 6 2 13 3 21 2Z"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="4.2"
-                  vectorEffect="non-scaling-stroke"
+            <div className="relative mt-4 aspect-[16/9] w-[min(72vw,300px)] drop-shadow-[0_2px_8px_rgba(42,31,41,0.26)] sm:mt-5 sm:w-[min(30vw,350px)]">
+              <img
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 h-full w-full object-contain"
+                src="/images/learning-hub-cloud.png"
+              />
+              <label className="absolute left-[22%] top-[43%] block w-[56%] -translate-y-1/2">
+                <span className="sr-only">Paste a link to capture</span>
+                <input
+                  aria-describedby="hero-link-message"
+                  className="w-full bg-transparent text-center text-[clamp(0.75rem,1.2vw,0.95rem)] font-semibold text-white/75 outline-none placeholder:text-white/55 focus:placeholder:text-white/35"
+                  onChange={(event) => {
+                    setHeroLink(event.target.value);
+                    setHeroLinkMessage("");
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      captureHeroLink();
+                    }
+                  }}
+                  placeholder="paste your links here"
+                  type="url"
+                  value={heroLink}
                 />
-                <text
-                  fill="currentColor"
-                  fontFamily="Inter, Arial, sans-serif"
-                  fontSize="19"
-                  fontWeight="600"
-                  opacity="0.5"
-                  textAnchor="middle"
-                  x="208"
-                  y="83"
-                >
-                  paste your links here
-                </text>
-              </svg>
+              </label>
+              <p
+                className="absolute left-1/2 top-[57%] w-[58%] -translate-x-1/2 text-center text-[0.68rem] font-bold text-white/70"
+                id="hero-link-message"
+              >
+                {heroLinkMessage}
+              </p>
             </div>
           </div>
         </div>
