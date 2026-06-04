@@ -203,6 +203,7 @@ export function LearningArchive() {
   const [searchTerm, setSearchTerm] = useState("");
   const [heroLink, setHeroLink] = useState("");
   const [heroLinkMessage, setHeroLinkMessage] = useState("");
+  const [pendingHeroLink, setPendingHeroLink] = useState("");
   const [capturedLinks, setCapturedLinks] = useState<CapturedLink[]>([]);
   const [savedCards, setSavedCards] = useState<LearningCard[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
@@ -663,7 +664,7 @@ export function LearningArchive() {
     stopSelectingCards();
   }
 
-  function captureHeroLink() {
+  function openHeroTagPicker() {
     const trimmedLink = heroLink.trim();
 
     if (!trimmedLink) {
@@ -671,10 +672,27 @@ export function LearningArchive() {
       return;
     }
 
+    setPendingHeroLink(trimmedLink);
+    setHeroLinkMessage("Choose a tag.");
+  }
+
+  function closeHeroTagPicker() {
+    setPendingHeroLink("");
+    setHeroLinkMessage("");
+  }
+
+  function captureHeroLink(category: string) {
+    const trimmedLink = pendingHeroLink.trim();
+
+    if (!trimmedLink) {
+      closeHeroTagPicker();
+      return;
+    }
+
     const capturedLink: CapturedLink = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       url: trimmedLink,
-      category: categoryOptions[0] ?? "Learn Later",
+      category,
       status: "Pending",
       capturedAt: new Date().toISOString()
     };
@@ -682,11 +700,62 @@ export function LearningArchive() {
     saveCapturedLinks([capturedLink, ...readCapturedLinks()]);
     void processCapturedLinkWithAi(capturedLink);
     setHeroLink("");
+    setPendingHeroLink("");
     setHeroLinkMessage("Captured.");
   }
 
   return (
     <main className="min-h-screen bg-paper text-ink">
+      {pendingHeroLink ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 py-5"
+          role="dialog"
+        >
+          <button
+            aria-label="Close tag picker"
+            className="absolute inset-0 bg-ink/30 backdrop-blur-sm"
+            onClick={closeHeroTagPicker}
+            type="button"
+          />
+          <section className="relative w-full max-w-md border border-ink/10 bg-paper p-5 shadow-soft">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-[0.24em] text-sage">
+                  Capture
+                </p>
+                <h2 className="mt-2 font-serif text-3xl text-ink">Choose tag</h2>
+                <p className="mt-2 truncate text-sm font-semibold text-ink/45">
+                  {pendingHeroLink}
+                </p>
+              </div>
+              <button
+                className="h-10 border border-ink/15 bg-white/55 px-4 text-xs font-bold uppercase tracking-[0.14em] text-ink/65 transition hover:border-sage hover:text-sage"
+                onClick={closeHeroTagPicker}
+                type="button"
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {(categoryOptions.length > 0 ? categoryOptions : ["Learn Later"]).map(
+                (category, categoryIndex) => (
+                  <button
+                    className="inline-flex h-9 items-center gap-2 rounded-full border border-ink/20 bg-white/70 px-3 text-xs font-bold lowercase text-ink/65 transition hover:border-sage hover:text-sage"
+                    key={category}
+                    onClick={() => captureHeroLink(category)}
+                    type="button"
+                  >
+                    <TagMark colorIndex={categoryIndex} tag={category} />
+                    {category}
+                  </button>
+                )
+              )}
+            </div>
+          </section>
+        </div>
+      ) : null}
+
       {activeCardCategoryMenuId ? (
         <button
           aria-label="Close card category menu"
@@ -740,7 +809,7 @@ export function LearningArchive() {
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
                       event.preventDefault();
-                      captureHeroLink();
+                      openHeroTagPicker();
                     }
                   }}
                   placeholder="paste your links here"
