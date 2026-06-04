@@ -262,12 +262,15 @@ export function LearningArchive() {
   const [hiddenStarterCardIds, setHiddenStarterCardIds] = useState<string[]>(
     []
   );
+  const [isArchiveStateReady, setIsArchiveStateReady] = useState(false);
   const [isSelectingCards, setIsSelectingCards] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
 
   useEffect(() => {
-    void syncBrowserArchiveStateWithServer();
+    void syncBrowserArchiveStateWithServer().finally(() => {
+      setIsArchiveStateReady(true);
+    });
   }, []);
 
   useEffect(() => {
@@ -373,6 +376,10 @@ export function LearningArchive() {
   }, []);
 
   useEffect(() => {
+    if (!isArchiveStateReady) {
+      return;
+    }
+
     let isMounted = true;
 
     async function importSlackCapturedLinks() {
@@ -429,7 +436,7 @@ export function LearningArchive() {
       isMounted = false;
       window.clearInterval(intervalId);
     };
-  }, []);
+  }, [isArchiveStateReady]);
 
   useEffect(() => {
     if (selectedCardIds.length === 0) {
