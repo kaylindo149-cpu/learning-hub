@@ -941,68 +941,61 @@ export function LearningArchive() {
         id="filters"
         className="sticky top-0 z-10 border-y border-ink/10 bg-paper/90 backdrop-blur"
       >
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-5 py-4 sm:px-8 lg:flex-row lg:items-center lg:px-10">
-          <label className="relative block w-full lg:max-w-md">
-            <span className="sr-only">Search saved links</span>
-            <input
-              className="w-full border border-ink/15 bg-white/70 px-5 py-3 text-base font-semibold outline-none transition placeholder:text-ink/35 focus:border-sage"
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Search links, topics, sources..."
-              type="search"
-              value={searchTerm}
-            />
-          </label>
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-5 py-4 sm:px-8 lg:px-10">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+            <label className="relative block w-full lg:max-w-md">
+              <span className="sr-only">Search saved links</span>
+              <input
+                className="w-full border border-ink/15 bg-white/70 px-5 py-3 text-base font-semibold outline-none transition placeholder:text-ink/35 focus:border-sage"
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search links, topics, sources..."
+                type="search"
+                value={searchTerm}
+              />
+            </label>
 
-          <div className="flex gap-2 overflow-x-auto pb-1 lg:ml-auto lg:pb-0">
-            {learningCategories.map((category, categoryIndex) => (
+            <div className="flex gap-2 overflow-x-auto pb-1 lg:ml-auto lg:pb-0">
+              {learningCategories.map((category, categoryIndex) => (
+                <button
+                  className={`inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-full border px-3 text-[0.68rem] font-bold lowercase tracking-normal transition ${
+                    activeCategory === category
+                      ? "border-ink bg-ink text-paper shadow-soft"
+                      : "border-ink/25 bg-white/55 text-ink/70 hover:border-sage hover:text-sage"
+                  }`}
+                  key={category}
+                  onClick={() => setActiveCategory(category)}
+                  type="button"
+                >
+                  {category !== "All" ? (
+                    <TagMark colorIndex={categoryIndex - 1} tag={category} />
+                  ) : null}
+                  {category}
+                </button>
+              ))}
               <button
-                className={`inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-full border px-3 text-[0.68rem] font-bold lowercase tracking-normal transition ${
-                  activeCategory === category
-                    ? "border-ink bg-ink text-paper shadow-soft"
-                    : "border-ink/25 bg-white/55 text-ink/70 hover:border-sage hover:text-sage"
-                }`}
-                key={category}
-                onClick={() => setActiveCategory(category)}
+                className="inline-flex h-9 items-center whitespace-nowrap rounded-full border border-ink/15 bg-paper/80 px-3 text-[0.68rem] font-bold lowercase tracking-normal text-sage transition hover:border-sage hover:bg-white"
+                onClick={() => openCategoryManager()}
                 type="button"
               >
-                {category !== "All" ? (
-                  <TagMark colorIndex={categoryIndex - 1} tag={category} />
-                ) : null}
-                {category}
+                manage tags
               </button>
-            ))}
-            <button
-              className="inline-flex h-9 items-center whitespace-nowrap rounded-full border border-ink/15 bg-paper/80 px-3 text-[0.68rem] font-bold lowercase tracking-normal text-sage transition hover:border-sage hover:bg-white"
-              onClick={() => openCategoryManager()}
-              type="button"
-            >
-              manage tags
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section
-        id="archive"
-        className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-8 lg:px-10"
-      >
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.28em] text-sage">
-              {filteredCards.length} saved cards
-            </p>
-            {isSelectingCards ? (
-              <p className="mt-2 text-sm text-ink/55">
-                {selectedCardsCount} selected
-              </p>
-            ) : null}
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 sm:justify-end">
-            {isSelectingCards ? (
-              <>
+          {isSelectingCards ? (
+            <div className="flex flex-col gap-3 border-t border-ink/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.28em] text-sage">
+                  {filteredCards.length} saved cards
+                </p>
+                <p className="mt-1 text-sm text-ink/55">
+                  {selectedCardsCount} selected
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2 sm:justify-end">
                 <button
-                  className="border border-ink/15 bg-white/55 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-ink/70 transition hover:border-sage hover:text-sage disabled:cursor-not-allowed disabled:text-ink/30"
+                  className="border border-ink/15 bg-white/70 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-ink/70 transition hover:border-sage hover:text-sage disabled:cursor-not-allowed disabled:text-ink/30"
                   disabled={filteredDeletableCardIds.length === 0}
                   onClick={toggleAllFilteredCards}
                   type="button"
@@ -1020,14 +1013,31 @@ export function LearningArchive() {
                   Delete selected
                 </button>
                 <button
-                  className="border border-ink/15 bg-white/55 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-ink/70 transition hover:border-sage hover:text-sage"
+                  className="border border-ink/15 bg-white/70 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-ink/70 transition hover:border-sage hover:text-sage"
                   onClick={stopSelectingCards}
                   type="button"
                 >
                   Cancel
                 </button>
-              </>
-            ) : (
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      <section
+        id="archive"
+        className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-8 lg:px-10"
+      >
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.28em] text-sage">
+              {filteredCards.length} saved cards
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2 sm:justify-end">
+            {!isSelectingCards ? (
               <>
                 <button
                   className="border border-ink/15 bg-white/55 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-ink/70 transition hover:border-sage hover:text-sage disabled:cursor-not-allowed disabled:text-ink/30"
@@ -1041,7 +1051,7 @@ export function LearningArchive() {
                   Browse slowly
                 </p>
               </>
-            )}
+            ) : null}
           </div>
 
         </div>
