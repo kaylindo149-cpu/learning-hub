@@ -37,6 +37,7 @@ Optional but recommended:
 
 ```bash
 SLACK_LEARNING_HUB_CHANNEL_ID=C012ABCDEF
+SLACK_LEARNING_HUB_CATEGORY=Digital Culture
 ```
 
 When a Slack message in that channel contains one or more `http` or `https` links, the app stores them in a small local server queue. The Learning Hub page checks that queue every few seconds, imports the links into Captured Links, and then the existing AI flow turns them into saved cards.
@@ -49,7 +50,15 @@ tag: Digital Culture https://example.com/article
 category: Learning Science https://example.com/article
 ```
 
-If you do not include a tag/category, the link is saved with an empty category and no tag. The Slack tag should match a tag you created in **manage tags** so it appears in the app filters.
+If you do not include a tag/category, the link uses `SLACK_LEARNING_HUB_CATEGORY` when it is set. Otherwise it is saved with an empty category and no tag. The Slack tag should match a tag you created in **manage tags** so it appears in the app filters.
+
+To check a live deployment without exposing secrets, open:
+
+```bash
+https://your-public-app-url.com/api/slack/events
+```
+
+It reports whether Slack signing, channel filtering, and queue storage are configured.
 
 On Vercel, use Upstash Redis or Vercel KV for the shared archive state and Slack queue:
 
@@ -76,6 +85,7 @@ GEMINI_API_KEY=your-gemini-api-key
 GEMINI_MODEL=gemini-2.5-flash
 SLACK_SIGNING_SECRET=your-slack-signing-secret
 SLACK_LEARNING_HUB_CHANNEL_ID=your-slack-channel-id
+SLACK_LEARNING_HUB_CATEGORY=your-default-slack-category
 UPSTASH_REDIS_REST_URL=your-upstash-rest-url
 UPSTASH_REDIS_REST_TOKEN=your-upstash-rest-token
 ```

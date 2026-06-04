@@ -76,7 +76,54 @@ function getCaptureDate(eventTs?: string) {
 function getSlackEventCategory(text?: string) {
   const selectedCategory = text ? extractCategoryFromSlackText(text) : undefined;
 
-  return selectedCategory ?? "";
+  return selectedCategory ?? process.env.SLACK_LEARNING_HUB_CATEGORY?.trim() ?? "";
+}
+
+function getSlackCaptureHealth() {
+  const channelId = process.env.SLACK_LEARNING_HUB_CHANNEL_ID?.trim() ?? "";
+  const hasRedisStorage = Boolean(
+    (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL) &&
+      (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)
+  );
+
+  return {
+    hasSigningSecret: Boolean(process.env.SLACK_SIGNING_SECRET),
+    hasChannelFilter: Boolean(channelId),
+    channelFilterLooksLikeSlackId: !channelId || /^[CGD][A-Z0-9]{8,}$/.test(channelId),
+    storageMode: hasRedisStorage
+      ? "redis"
+      : process.env.VERCEL
+        ? "vercel-tmp"
+        : "local-file",
+    hasPersistentQueue: hasRedisStorage || !process.env.VERCEL
+  };
+}
+
+function getIgnoredMessageReason(payload: SlackEventPayload) {
+  const event = payload.event;
+  const expectedChannelId = process.env.SLACK_LEARNING_HUB_CHANNEL_ID?.trim();
+
+  if (!event) {
+    return "missing_event";
+  }
+
+  if (event.type !== "message") {
+    return "not_message";
+  }
+
+  if (event.subtype) {
+    return `message_subtype:${event.subtype}`;
+  }
+
+  if (!event.text) {
+    return "missing_text";
+  }
+
+  if (expectedChannelId && event.channel !== expectedChannelId) {
+    return "channel_mismatch";
+  }
+
+  return "";
 }
 
 function createCapturedLinksFromSlackEvent(
@@ -95,6 +142,13 @@ function createCapturedLinksFromSlackEvent(
     status: "Pending",
     capturedAt
   }));
+}
+
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    slackCapture: getSlackCaptureHealth()
+  });
 }
 
 export async function POST(request: Request) {
@@ -123,19 +177,13 @@ export async function POST(request: Request) {
   }
 
   const event = payload.event;
-  const expectedChannelId = process.env.SLACK_LEARNING_HUB_CHANNEL_ID?.trim();
+  const ignoredReason = getIgnoredMessageReason(payload);
 
-  if (
-    !event ||
-    event.type !== "message" ||
-    event.subtype ||
-    !event.text ||
-    (expectedChannelId && event.channel !== expectedChannelId)
-  ) {
-    return NextResponse.json({ ok: true });
+  if (ignoredReason) {
+    return NextResponse.json({ ok: true, ignored: ignoredReason });
   }
 
-  const urls = extractUrlsFromSlackText(event.text);
+  const urls = extractUrlsFromSlackText(event?.text ?? "");
 
   if (urls.length > 0) {
     await appendServerCapturedLinks(createCapturedLinksFromSlackEvent(payload, urls));
