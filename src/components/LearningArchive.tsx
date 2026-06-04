@@ -31,7 +31,10 @@ import {
   hideStarterCards,
   readHiddenStarterCardIds
 } from "@/lib/hiddenStarterCards";
-import { processCapturedLinkWithAi } from "@/lib/aiProcessor";
+import {
+  processCapturedLinkWithAi,
+  processCapturedLinksWithAi
+} from "@/lib/aiProcessor";
 import { syncBrowserArchiveStateWithServer } from "@/lib/browserArchiveState";
 
 function isTemporaryCard(card: LearningCard) {
@@ -198,6 +201,49 @@ function createTemporaryCard(capturedLink: CapturedLink): LearningCard {
   };
 }
 
+function isCapturedLink(value: unknown): value is CapturedLink {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const capturedLink = value as Partial<CapturedLink>;
+
+  return (
+    typeof capturedLink.id === "string" &&
+    typeof capturedLink.url === "string" &&
+    typeof capturedLink.category === "string" &&
+    typeof capturedLink.capturedAt === "string"
+  );
+}
+
+async function readSlackCapturedLinks(): Promise<CapturedLink[]> {
+  const response = await fetch("/api/slack/captured-links", {
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const data = await response.json();
+
+  return Array.isArray(data.links) ? data.links.filter(isCapturedLink) : [];
+}
+
+async function acknowledgeSlackCapturedLinks(ids: string[]) {
+  if (ids.length === 0) {
+    return;
+  }
+
+  await fetch("/api/slack/captured-links", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({ ids })
+  });
+}
+
 export function LearningArchive() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
@@ -226,7 +272,10 @@ export function LearningArchive() {
 
   useEffect(() => {
     function syncCapturedLinks() {
-      setCapturedLinks(readCapturedLinks());
+      const nextCapturedLinks = readCapturedLinks();
+
+      setCapturedLinks(nextCapturedLinks);
+      processCapturedLinksWithAi(nextCapturedLinks);
     }
 
     function syncSavedCards() {
@@ -320,6 +369,65 @@ export function LearningArchive() {
         handleLearningCategoriesChanged
       );
       window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function importSlackCapturedLinks() {
+      try {
+        const slackCapturedLinks = await readSlackCapturedLinks();
+
+        if (!isMounted || slackCapturedLinks.length === 0) {
+          return;
+        }
+
+        const storedCapturedLinks = readCapturedLinks();
+        const storedCapturedLinkIds = new Set(
+          storedCapturedLinks.map((capturedLink) => capturedLink.id)
+        );
+        const newCapturedLinks = slackCapturedLinks.filter(
+          (capturedLink) => !storedCapturedLinkIds.has(capturedLink.id)
+        );
+
+        if (newCapturedLinks.length === 0) {
+          await acknowledgeSlackCapturedLinks(
+            slackCapturedLinks.map((capturedLink) => capturedLink.id)
+          );
+          return;
+        }
+
+        const normalizedSlackCapturedLinks: CapturedLink[] =
+          newCapturedLinks.map((capturedLink) => ({
+            ...capturedLink,
+            status:
+              capturedLink.status === "Processing" ||
+              capturedLink.status === "Failed"
+                ? capturedLink.status
+                : "Pending"
+          }));
+        const nextCapturedLinks = [
+          ...normalizedSlackCapturedLinks,
+          ...storedCapturedLinks
+        ];
+
+        setCapturedLinks(nextCapturedLinks);
+        saveCapturedLinks(nextCapturedLinks);
+        await acknowledgeSlackCapturedLinks(
+          newCapturedLinks.map((capturedLink) => capturedLink.id)
+        );
+      } catch {
+        // Slack sync should not interrupt the archive.
+      }
+    }
+
+    void importSlackCapturedLinks();
+    const intervalId = window.setInterval(importSlackCapturedLinks, 10000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
     };
   }, []);
 
