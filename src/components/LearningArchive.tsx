@@ -993,33 +993,61 @@ export function LearningArchive() {
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-2 sm:justify-end">
-                <button
-                  className="border border-ink/15 bg-white/70 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-ink/70 transition hover:border-sage hover:text-sage disabled:cursor-not-allowed disabled:text-ink/30"
-                  disabled={filteredDeletableCardIds.length === 0}
-                  onClick={toggleAllFilteredCards}
-                  type="button"
+              {isConfirmingDelete ? (
+                <div
+                  aria-live="polite"
+                  className="flex flex-col gap-3 border border-clay/30 bg-white/70 p-4 sm:min-w-[28rem] sm:flex-row sm:items-center sm:justify-between"
                 >
-                  {areAllFilteredDeletableCardsSelected
-                    ? "Deselect all"
-                    : "Select all"}
-                </button>
-                <button
-                  className="border border-clay bg-clay px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-paper transition disabled:cursor-not-allowed disabled:border-ink/15 disabled:bg-ink/10 disabled:text-ink/35"
-                  disabled={selectedCardsCount === 0}
-                  onClick={() => setIsConfirmingDelete(true)}
-                  type="button"
-                >
-                  Delete selected
-                </button>
-                <button
-                  className="border border-ink/15 bg-white/70 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-ink/70 transition hover:border-sage hover:text-sage"
-                  onClick={stopSelectingCards}
-                  type="button"
-                >
-                  Cancel
-                </button>
-              </div>
+                  <p className="font-serif text-2xl leading-tight text-ink">
+                    Are you sure to delete {selectedCardsCount}{" "}
+                    {selectedCardsCount === 1 ? "card" : "cards"}?
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      className="border border-clay bg-clay px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-paper transition hover:border-ink hover:bg-ink"
+                      onClick={deleteSelectedCards}
+                      type="button"
+                    >
+                      Yes, delete
+                    </button>
+                    <button
+                      className="border border-ink/15 bg-white/70 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-ink/70 transition hover:border-sage hover:text-sage"
+                      onClick={() => setIsConfirmingDelete(false)}
+                      type="button"
+                    >
+                      Keep cards
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2 sm:justify-end">
+                  <button
+                    className="border border-ink/15 bg-white/70 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-ink/70 transition hover:border-sage hover:text-sage disabled:cursor-not-allowed disabled:text-ink/30"
+                    disabled={filteredDeletableCardIds.length === 0}
+                    onClick={toggleAllFilteredCards}
+                    type="button"
+                  >
+                    {areAllFilteredDeletableCardsSelected
+                      ? "Deselect all"
+                      : "Select all"}
+                  </button>
+                  <button
+                    className="border border-clay bg-clay px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-paper transition disabled:cursor-not-allowed disabled:border-ink/15 disabled:bg-ink/10 disabled:text-ink/35"
+                    disabled={selectedCardsCount === 0}
+                    onClick={() => setIsConfirmingDelete(true)}
+                    type="button"
+                  >
+                    Delete selected
+                  </button>
+                  <button
+                    className="border border-ink/15 bg-white/70 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-ink/70 transition hover:border-sage hover:text-sage"
+                    onClick={stopSelectingCards}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           ) : null}
         </div>
@@ -1055,36 +1083,6 @@ export function LearningArchive() {
           </div>
 
         </div>
-
-        {isConfirmingDelete ? (
-          <div
-            aria-live="polite"
-            className="mb-8 border border-clay/30 bg-white/65 p-5"
-          >
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="font-serif text-2xl leading-tight text-ink">
-                Are you sure to delete {selectedCardsCount}{" "}
-                {selectedCardsCount === 1 ? "card" : "cards"}?
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  className="border border-clay bg-clay px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-paper transition hover:border-ink hover:bg-ink"
-                  onClick={deleteSelectedCards}
-                  type="button"
-                >
-                  Yes, delete
-                </button>
-                <button
-                  className="border border-ink/15 bg-white/55 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-ink/70 transition hover:border-sage hover:text-sage"
-                  onClick={() => setIsConfirmingDelete(false)}
-                  type="button"
-                >
-                  Keep cards
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
 
         <div className="grid gap-x-10 gap-y-16 md:grid-cols-2 xl:grid-cols-3">
           {filteredCards.map((card) => {
