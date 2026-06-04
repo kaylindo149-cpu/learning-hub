@@ -722,7 +722,13 @@ export function LearningArchive() {
                 className="pointer-events-none absolute inset-0 h-full w-full object-contain"
                 src="/images/learning-hub-cloud.png"
               />
-              <label className="absolute left-[22%] top-[43%] block w-[56%] -translate-y-1/2">
+              <p
+                className="absolute left-1/2 top-[41%] w-[58%] -translate-x-1/2 -translate-y-1/2 text-center text-[0.68rem] font-bold text-white/70"
+                id="hero-link-message"
+              >
+                {heroLinkMessage}
+              </p>
+              <label className="absolute left-[22%] top-[57%] block w-[56%] -translate-y-1/2">
                 <span className="sr-only">Paste a link to capture</span>
                 <input
                   aria-describedby="hero-link-message"
@@ -742,12 +748,6 @@ export function LearningArchive() {
                   value={heroLink}
                 />
               </label>
-              <p
-                className="absolute left-1/2 top-[57%] w-[58%] -translate-x-1/2 text-center text-[0.68rem] font-bold text-white/70"
-                id="hero-link-message"
-              >
-                {heroLinkMessage}
-              </p>
             </div>
           </div>
         </div>
